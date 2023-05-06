@@ -1,0 +1,221 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\newcommand{\dif}{\mathop{}\!{d}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\real}{\mathbb{R}}
+\DeclareMathOperator{\diag}{diag}
+\DeclarePairedDelimiter{\Det}{\lvert}{\rvert}
+
+\title{Notes on Exact GP Regression with Replication}
+\author{Dan Schulman}
+
+\begin{document}
+\maketitle
+
+Let $y \in \real^{\infty \times n}$ be a vector of observations, where each observation $y_i \in \real^{m_i}$ is a vector of $m_i$ replicates.
+Let $x \in \mathcal{X}^n$ be a vector of input variables, where $\mathcal{X}$ is an arbitrary set.
+
+Let $f \in \real^n$ be latent means.
+Let $\sigma^2 \in \real_{>0}$ be the observation variance.
+Assume $y_{ij}$ is drawn from a normal distribution:
+
+\begin{equation}
+    y_{ij} \sim N(f_i, \sigma^2)
+\end{equation}
+
+Let $\mu \in \real^n$ be a prior mean, which may be constant, or $\mu_i$ may be a function of $x_i$.
+Let $k(x_i, x_j; \theta)$ be a positive definite covariance function on $\mathcal{X}$ with parameters $\theta$.
+Let $K$ be a $n \times n$ covariance matrix such that $K_{ij} = k(x_i, x_j; \theta)$.
+Assume $f$ has a gaussian process prior:
+
+\begin{equation}
+    f \sim GP(\mu, k(;\theta))
+\end{equation}
+
+First, consider $p(y \mid f, \sigma^2)$.
+Let $u \in \real^n$ and $v \in \real^n$ be the sample means and (uncorrected) sample variances of each $y_i$.
+
+\begin{equation}
+    u_i = \frac{1}{m_i} \sum_{j=1}^{m_i} y_{ij}
+\end{equation}
+
+\begin{equation}
+    v_i = \frac{1}{m_i} \sum_{j=1}^{m_i} (y_{ij} - u_i)^2
+\end{equation}
+
+Since $u_i$ and $v_i$ are sufficient statistics, we can write $p(y_i \mid f_i, \sigma^2)$ using only these, regardless of the number of replicates.
+In the last step, note that $\sum_{j=1}^{m_i} (y_{ij} - u_i) = 0$.
+
+\begin{align}
+    p(y_i \mid f_i, \sigma^2)
+    &= 
+    (2 \pi \sigma^2)^{-\frac{1}{2} m_i}
+    \exp\left(
+        -\frac{1}{2\sigma^2} 
+        \sum_{j=1}^{m_i} (y_{ij} - f_i)^2
+    \right)
+    \\ &=
+    (2 \pi \sigma^2)^{-\frac{1}{2} m_i}
+    \exp\left(
+        -\frac{1}{2\sigma^2} 
+        \sum_{j=1}^{m_i} ((y_{ij} - u_i) - (f_i - u_i))^2
+    \right)
+    \\ &=
+    (2 \pi \sigma^2)^{-\frac{1}{2} m_i} 
+    \exp\left(
+        -\frac{m_i}{2\sigma^2} \left(
+            (u_i - f_i)^2 + v_i
+        \right)
+    \right)
+\end{align}
+
+Let $M = \diag(m)$.
+This lets us write $p(y \mid f, \sigma^2)$ in a compact matrix form which will be convenient later:
+
+\begin{equation}
+    p(y \mid f, \sigma^2)
+    =
+    (2 \pi \sigma^2)^{-\frac{1}{2} \one^T m}
+    \exp \left(
+        -\frac{1}{2} (u - f)^T (\sigma^{-2} M) (u - f)
+        -\frac{1}{2} m^T v
+    \right)
+\end{equation}
+
+The prior $p(f \mid \mu, \theta)$ is a multivariate Gaussian.
+
+\begin{equation}
+    p(f \mid \mu, \theta)
+    =
+    (2 \pi)^{-\frac{1}{2} n}
+    \Det{K}^{-\frac{1}{2}}
+    \exp \left(
+        -\frac{1}{2} (f - \mu)^T K^{-1} (f - \mu)
+    \right)
+\end{equation}
+
+The marginal likelihood.
+
+\begin{align}
+    p(y \mid \mu, \sigma^2, \theta)
+    &=
+    \int_{\real^n}
+    p(y \mid f, \sigma^2) \;
+    p(f \mid \mu, \theta) \;
+    \dif f
+    \\ &=
+    (2 \pi)^{-\frac{1}{2} (n + \one^T m)}
+    \sigma^{-\one^T m}
+    \Det{K}^{-\frac{1}{2}}
+    \int_{\real^n} h(f) \dif f
+\end{align}
+
+Where $h(f)$ is a Gaussian function:
+
+\begin{align}
+    h(f)
+    &=
+    \exp \biggl(
+        - \frac{1}{2} (f - \mu)^T K^{-1} (f - \mu)
+        - \frac{1}{2} (u - f)^T (\sigma^{-2} M) (u - f)
+        - \frac{1}{2} m^T v
+    \biggr)
+    \\ &
+    \begin{aligned}
+    = \exp \biggl(
+        &
+        - \frac{1}{2} f^T (K^{-1} + \sigma^{-2} M) f
+        \\ &
+        + (\mu^T K^{-1} + u^T \sigma^{-2} M) f
+        \\ &
+        - \frac{1}{2} \mu^T K^{-1} \mu
+        - \frac{1}{2} u^T (\sigma^{-2} M) u
+        - \frac{1}{2} m^T v
+    \biggr)
+    \end{aligned}
+\end{align}
+
+The integral has an easy analytic solution.
+Applying it, plus some rearranging, gives the following (messy) formula for the marginal likelihood.
+
+\begin{equation}
+    \begin{aligned}
+        p(y \mid \mu, \sigma^2, \theta)
+        = &
+        (2 \pi)^{-\frac{1}{2} \one^T m}
+        \sigma^{-\one^T m}
+        \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}}
+        \Det{K}^{-\frac{1}{2}}
+        \\ &
+        \begin{aligned}
+            \cdot \exp \biggl(
+                &
+                - \frac{1}{2} u^T (\sigma^{-2} M - \sigma^{-2} M (K^{-1} + \sigma^{-2} M)^{-1} \sigma^{-2} M) u
+                \\ &
+                - \frac{1}{2} \mu^T (K^{-1} - K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} K^{-1}) \mu
+                \\ &
+                + \mu^T K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} (\sigma^{-2} M) u
+                \\ &
+                - \frac{1}{2} m^T v 
+            \biggr)
+        \end{aligned}
+    \end{aligned}
+\end{equation}
+
+The first two terms in the exponential can be simplified via the Woodbury matrix identity (in the reverse of the usual direction).
+The third can be simplified trivially, by multiplying through.
+All yield the same result, giving a quadratic form.
+
+\begin{equation}
+    \sigma^{-2} M - \sigma^{-2} M (K^{-1} + \sigma^{-2} M)^{-1} \sigma^{-2} M = (K + \sigma^2 M^{-1})^{-1}
+\end{equation}
+
+\begin{equation}
+    K^{-1} - K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} K^{-1} = (K + \sigma^2 M^{-1})^{-1}
+\end{equation}
+
+\begin{equation}
+    K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} \sigma^{-2} M = (K + \sigma^2 M^{-1})^{-1}
+\end{equation}
+
+We further simplify using the matrix determinant lemma.
+
+\begin{align}
+    \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}} \Det{K}^{-\frac{1}{2}}
+    & =
+    \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}} \Det{K}^{-\frac{1}{2}}
+    \Det{\sigma^2 M^{-1}}^{-\frac{1}{2}} \Det{\sigma^2 M^{-1}}^{\frac{1}{2}}
+    \\ &=
+    \Det{K + \sigma^2 M^{-1}}^{-\frac{1}{2}}
+    \Det{\sigma^2 M^{-1}}^{\frac{1}{2}}
+    \\ &=
+    \Det{K + \sigma^2 M^{-1}}^{-\frac{1}{2}}
+    \sigma^n
+    \Det{M}^{-\frac{1}{2}}
+\end{align}
+
+Substituting everything back, and simplifying yields a fairly clean and easily computable formula.
+Note that $\Det{M}$ is trivial, since $M$ is diagonal.
+For brevity, let $C = K + \sigma^2 M^{-1}$.
+
+\begin{equation}
+\begin{aligned}
+    p(y \mid \mu, \sigma^2, \theta)
+    = &
+    (2 \pi)^{-\frac{1}{2} \one^T m}
+    \sigma^{n - \one^T m}
+    \Det{M}^{-\frac{1}{2}}
+    \Det{C}^{-\frac{1}{2}}
+    \\ &
+    \exp\left(
+        - \frac{1}{2} (u - \mu)^T C^{-1} (u - \mu)
+        - \frac{1}{2} m^T v
+    \right)
+\end{aligned}
+\end{equation}
+
+\end{document}
