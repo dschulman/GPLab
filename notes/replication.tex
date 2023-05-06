@@ -82,7 +82,7 @@ This lets us write $p(y \mid f, \sigma^2)$ in a compact matrix form which will b
     (2 \pi \sigma^2)^{-\frac{1}{2} \one^T m}
     \exp \left(
         -\frac{1}{2} (u - f)^T (\sigma^{-2} M) (u - f)
-        -\frac{1}{2} m^T v
+        -\frac{1}{2 \sigma^2} m^T v
     \right)
 \end{equation}
 
@@ -116,28 +116,20 @@ The marginal likelihood.
 
 Where $h(f)$ is a Gaussian function:
 
-\begin{align}
-    h(f)
-    &=
-    \exp \biggl(
-        - \frac{1}{2} (f - \mu)^T K^{-1} (f - \mu)
-        - \frac{1}{2} (u - f)^T (\sigma^{-2} M) (u - f)
-        - \frac{1}{2} m^T v
-    \biggr)
-    \\ &
-    \begin{aligned}
-    = \exp \biggl(
-        &
-        - \frac{1}{2} f^T (K^{-1} + \sigma^{-2} M) f
-        \\ &
-        + (\mu^T K^{-1} + u^T \sigma^{-2} M) f
-        \\ &
-        - \frac{1}{2} \mu^T K^{-1} \mu
-        - \frac{1}{2} u^T (\sigma^{-2} M) u
-        - \frac{1}{2} m^T v
-    \biggr)
-    \end{aligned}
-\end{align}
+\begin{equation}
+    \begin{split}
+        h(f) = \exp \biggl(
+            & 
+            - \frac{1}{2} f^T (K^{-1} + \sigma^{-2} M) f
+            \\ &
+            + (\mu^T K^{-1} + u^T \sigma^{-2} M) f
+            \\ &
+            - \frac{1}{2} \mu^T K^{-1} \mu
+            - \frac{1}{2} u^T (\sigma^{-2} M) u
+            - \frac{1}{2\sigma^2} m^T v
+        \biggr)
+    \end{split}
+\end{equation}
 
 The integral has an easy analytic solution.
 Applying it, plus some rearranging, gives the following (messy) formula for the marginal likelihood.
@@ -160,7 +152,7 @@ Applying it, plus some rearranging, gives the following (messy) formula for the 
                 \\ &
                 + \mu^T K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} (\sigma^{-2} M) u
                 \\ &
-                - \frac{1}{2} m^T v 
+                - \frac{1}{2\sigma^2} m^T v
             \biggr)
         \end{aligned}
     \end{aligned}
@@ -185,8 +177,9 @@ All yield the same result, giving a quadratic form.
 We further simplify using the matrix determinant lemma.
 
 \begin{align}
+    & 
     \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}} \Det{K}^{-\frac{1}{2}}
-    & =
+    \notag \\ & =
     \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}} \Det{K}^{-\frac{1}{2}}
     \Det{\sigma^2 M^{-1}}^{-\frac{1}{2}} \Det{\sigma^2 M^{-1}}^{\frac{1}{2}}
     \\ &=
@@ -199,23 +192,22 @@ We further simplify using the matrix determinant lemma.
 \end{align}
 
 Substituting everything back, and simplifying yields a fairly clean and easily computable formula.
-Note that $\Det{M}$ is trivial, since $M$ is diagonal.
 For brevity, let $C = K + \sigma^2 M^{-1}$.
 
 \begin{equation}
-\begin{aligned}
+\begin{split}
     p(y \mid \mu, \sigma^2, \theta)
     = &
     (2 \pi)^{-\frac{1}{2} \one^T m}
     \sigma^{n - \one^T m}
     \Det{M}^{-\frac{1}{2}}
     \Det{C}^{-\frac{1}{2}}
-    \\ &
-    \exp\left(
-        - \frac{1}{2} (u - \mu)^T C^{-1} (u - \mu)
-        - \frac{1}{2} m^T v
+    \\
+    & \exp\left(
+        -\frac{1}{2} (u - \mu)^T C^{-1} (u - \mu)
+        - \frac{1}{2\sigma^2} m^T v
     \right)
-\end{aligned}
+\end{split}
 \end{equation}
 
 \end{document}
