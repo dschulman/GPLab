@@ -24,16 +24,16 @@ Let $\sigma^2 \in \real_{>0}$ be the observation variance.
 Assume $y_{ij}$ is drawn from a normal distribution:
 
 \begin{equation}
-    y_{ij} \sim N(f_i, \sigma^2)
+    p(y_{ij} \mid f_i, \sigma^2) = N(y_{ij} \mid f_i, \sigma^2)
 \end{equation}
 
 Let $\mu \in \real^n$ be a prior mean, which may be constant, or $\mu_i$ may be a function of $x_i$.
 Let $k(x_i, x_j; \theta)$ be a positive definite covariance function on $\mathcal{X}$ with parameters $\theta$.
 Let $K$ be a $n \times n$ covariance matrix such that $K_{ij} = k(x_i, x_j; \theta)$.
-Assume $f$ has a gaussian process prior:
+Assume $f$ has a gaussian process prior, so that when instatiated at $x$:
 
 \begin{equation}
-    f \sim GP(\mu, k(;\theta))
+    p(f \mid \mu, \theta) = N(f \mid \mu, K)
 \end{equation}
 
 First, consider $p(y \mid f, \sigma^2)$.
@@ -50,164 +50,82 @@ Let $u \in \real^n$ and $v \in \real^n$ be the sample means and (uncorrected) sa
 Since $u_i$ and $v_i$ are sufficient statistics, we can write $p(y_i \mid f_i, \sigma^2)$ using only these, regardless of the number of replicates.
 In the last step, note that $\sum_{j=1}^{m_i} (y_{ij} - u_i) = 0$.
 
-\begin{align}
+\begin{equation}
     p(y_i \mid f_i, \sigma^2)
-    &= 
-    (2 \pi \sigma^2)^{-\frac{1}{2} m_i}
-    \exp\left(
-        -\frac{1}{2\sigma^2} 
-        \sum_{j=1}^{m_i} (y_{ij} - f_i)^2
-    \right)
-    \\ &=
-    (2 \pi \sigma^2)^{-\frac{1}{2} m_i}
-    \exp\left(
-        -\frac{1}{2\sigma^2} 
-        \sum_{j=1}^{m_i} ((y_{ij} - u_i) - (f_i - u_i))^2
-    \right)
-    \\ &=
+    =
     (2 \pi \sigma^2)^{-\frac{1}{2} m_i} 
     \exp\left(
         -\frac{m_i}{2\sigma^2} \left(
             (u_i - f_i)^2 + v_i
         \right)
     \right)
-\end{align}
-
-Let $M = \diag(m)$.
-This lets us write $p(y \mid f, \sigma^2)$ in a compact matrix form which will be convenient later:
-
-\begin{equation}
-    p(y \mid f, \sigma^2)
-    =
-    (2 \pi \sigma^2)^{-\frac{1}{2} \one^T m}
-    \exp \left(
-        -\frac{1}{2} (u - f)^T (\sigma^{-2} M) (u - f)
-        -\frac{1}{2 \sigma^2} m^T v
-    \right)
 \end{equation}
 
-The prior $p(f \mid \mu, \theta)$ is a multivariate Gaussian.
+Note that this contains a normal distribution on $u_i$.
+Using this, we can write $p(y \mid f, \sigma^2)$ as a product of a normal distribution and a term to account for added variance.
 
-\begin{equation}
-    p(f \mid \mu, \theta)
-    =
-    (2 \pi)^{-\frac{1}{2} n}
-    \Det{K}^{-\frac{1}{2}}
-    \exp \left(
-        -\frac{1}{2} (f - \mu)^T K^{-1} (f - \mu)
-    \right)
-\end{equation}
+\begin{gather}
+    p(y \mid f, \sigma^2) = V \cdot p(u \mid f, \sigma^2)
+    \\
+    p(u \mid f, \sigma^2) = N(u \mid f, \sigma^2 M^{-1})
+    \\
+    V = (2 \pi \sigma^2)^{-\frac{1}{2}(\one^T m - n)} \Det{M}^{-\frac{1}{2}} \exp\left(-\frac{1}{2\sigma^2} m^T v\right)
+    \\
+    M = \diag(m)
+\end{gather}
 
-The marginal likelihood.
+We are essentially done!
+This is almost equivalent to a standard GP on $u$ rather than $y$, and standard formulas will all apply with slight modifications.
+The correction term $V$ appears in the marginal likelihood:
 
 \begin{align}
     p(y \mid \mu, \sigma^2, \theta)
     &=
-    \int_{\real^n}
-    p(y \mid f, \sigma^2) \;
-    p(f \mid \mu, \theta) \;
-    \dif f
+    \int_{\real^n} p(y \mid f, \sigma^2) \; p(f \mid \mu, \theta) \; \dif f
     \\ &=
-    (2 \pi)^{-\frac{1}{2} (n + \one^T m)}
-    \sigma^{-\one^T m}
-    \Det{K}^{-\frac{1}{2}}
-    \int_{\real^n} h(f) \dif f
+    V \int_{\real^n} p(u \mid f, \sigma^2) \; p(f \mid \mu, \theta) \; \dif f
+    \\ &=
+    V \cdot p(u \mid \mu, \sigma^2, \theta)
+    \\
+    p(u \mid \mu, \sigma^2, \theta)
+    &=
+    N(u \mid \mu, K + \sigma^2 M^{-1})
 \end{align}
 
-Where $h(f)$ is a Gaussian function:
-
-\begin{equation}
-    \begin{split}
-        h(f) = \exp \biggl(
-            & 
-            - \frac{1}{2} f^T (K^{-1} + \sigma^{-2} M) f
-            \\ &
-            + (\mu^T K^{-1} + u^T \sigma^{-2} M) f
-            \\ &
-            - \frac{1}{2} \mu^T K^{-1} \mu
-            - \frac{1}{2} u^T (\sigma^{-2} M) u
-            - \frac{1}{2\sigma^2} m^T v
-        \biggr)
-    \end{split}
-\end{equation}
-
-The integral has an easy analytic solution.
-Applying it, plus some rearranging, gives the following (messy) formula for the marginal likelihood.
-
-\begin{equation}
-    \begin{aligned}
-        p(y \mid \mu, \sigma^2, \theta)
-        = &
-        (2 \pi)^{-\frac{1}{2} \one^T m}
-        \sigma^{-\one^T m}
-        \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}}
-        \Det{K}^{-\frac{1}{2}}
-        \\ &
-        \begin{aligned}
-            \cdot \exp \biggl(
-                &
-                - \frac{1}{2} u^T (\sigma^{-2} M - \sigma^{-2} M (K^{-1} + \sigma^{-2} M)^{-1} \sigma^{-2} M) u
-                \\ &
-                - \frac{1}{2} \mu^T (K^{-1} - K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} K^{-1}) \mu
-                \\ &
-                + \mu^T K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} (\sigma^{-2} M) u
-                \\ &
-                - \frac{1}{2\sigma^2} m^T v
-            \biggr)
-        \end{aligned}
-    \end{aligned}
-\end{equation}
-
-The first two terms in the exponential can be simplified via the Woodbury matrix identity (in the reverse of the usual direction).
-The third can be simplified trivially, by multiplying through.
-All yield the same result, giving a quadratic form.
-
-\begin{equation}
-    \sigma^{-2} M - \sigma^{-2} M (K^{-1} + \sigma^{-2} M)^{-1} \sigma^{-2} M = (K + \sigma^2 M^{-1})^{-1}
-\end{equation}
-
-\begin{equation}
-    K^{-1} - K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} K^{-1} = (K + \sigma^2 M^{-1})^{-1}
-\end{equation}
-
-\begin{equation}
-    K^{-1} (K^{-1} + \sigma^{-2} M)^{-1} \sigma^{-2} M = (K + \sigma^2 M^{-1})^{-1}
-\end{equation}
-
-We further simplify using the matrix determinant lemma.
+However, it vanishes in the posterior of $f$:
 
 \begin{align}
-    & 
-    \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}} \Det{K}^{-\frac{1}{2}}
-    \notag \\ & =
-    \Det{K^{-1} + \sigma^{-2} M}^{-\frac{1}{2}} \Det{K}^{-\frac{1}{2}}
-    \Det{\sigma^2 M^{-1}}^{-\frac{1}{2}} \Det{\sigma^2 M^{-1}}^{\frac{1}{2}}
+    p(f \mid y, \mu, \sigma^2, \theta)
+    &=
+    \frac{p(y \mid f, \sigma^2) \; p(f \mid \mu, \theta)}{p(y \mid \mu, \sigma^2, \theta)}
     \\ &=
-    \Det{K + \sigma^2 M^{-1}}^{-\frac{1}{2}}
-    \Det{\sigma^2 M^{-1}}^{\frac{1}{2}}
+    \frac{p(u \mid f, \sigma^2) \; p(f \mid \mu, \theta)}{p(u \mid \mu, \sigma^2, \theta)}
     \\ &=
-    \Det{K + \sigma^2 M^{-1}}^{-\frac{1}{2}}
-    \sigma^n
-    \Det{M}^{-\frac{1}{2}}
+    p(f \mid u, \mu, \sigma^2, \theta)
 \end{align}
 
-Substituting everything back, and simplifying yields a fairly clean and easily computable formula.
-For brevity, let $C = K + \sigma^2 M^{-1}$.
+By standard formula of the posterior of a multivariate normal:
 
-\begin{equation}
-\begin{split}
-    p(y \mid \mu, \sigma^2, \theta)
-    = &
-    (2 \pi)^{-\frac{1}{2} \one^T m}
-    \sigma^{n - \one^T m}
-    \Det{M}^{-\frac{1}{2}}
-    \Det{C}^{-\frac{1}{2}}
+\begin{gather}
+    \mathbb{E}[f \mid y, \mu, \sigma^2, \theta) =
+    (K^{-1} + \sigma^{-2} M)^{-1} (K^{-1} \mu + \sigma^{-2} M u)
     \\
-    & \exp\left(
-        -\frac{1}{2} (u - \mu)^T C^{-1} (u - \mu)
-        - \frac{1}{2\sigma^2} m^T v
-    \right)
-\end{split}
-\end{equation}
+    \mathbb{V}[f \mid y, \mu, \sigma^2, \theta] =
+    (K^{-1} + \sigma^{-2} M)^{-1}
+\end{gather}
+
+Since only the posterior is needed for the posterior predictive distribution, $V$ does not appear there either.
+Let $x_*$ be a vector of test input points.
+Let $\mu_*$ be the values of the mean function at $x_*$.
+Let $K_{*(ij)} = k(x_i, x_{*(j)}; \theta)$.
+Let $K_{**(ij)} = k(x_{*(i)}, x_{*(j)}; \theta)$.
+
+\begin{gather}
+    \mathbb{E}[f_* \mid y, \mu, \sigma^2, \theta] =
+    \mu_* + K_*^T (K + \sigma^2 M^{-1})^{-1} (u - \mu)
+    \\
+    \mathbb{V}[f_* \mid y, \mu, \sigma^2, \theta] =
+    K_{**} - K_*^T (K + \sigma^2 M^{-1})^{-1} K_*
+\end{gather}
 
 \end{document}
