@@ -12,7 +12,7 @@ using Zygote
 export GPRegressor, RepGPRegressor, fit
 
 include("util.jl")
-include("std_regression.jl")
-include("rep_regression.jl")
+include("std_gpr.jl")
+include("rep_gpr.jl")
 
 end
