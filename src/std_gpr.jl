@@ -1,5 +1,5 @@
-mutable struct GPRegressor
-    kernel::Kernel
+mutable struct GPRegressor{Tk<:Kernel}
+    kernel::Tk
 end
 
 GPRegressor() = GPRegressor(Matern52Kernel())

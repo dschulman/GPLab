@@ -1,13 +1,13 @@
-mutable struct RepGPRegressor
-    kernel::Kernel
+mutable struct RepGPRegressor{Tk<:Kernel}
+    kernel::Tk
 end
 
 RepGPRegressor() = RepGPRegressor(Matern52Kernel())
 
-struct RepGPRegression
+struct RepGPRegression{Tk<:Kernel}
     lml
     params
-    kernel::Kernel
+    kernel::Tk
     Cchol::Cholesky
     α
 end
