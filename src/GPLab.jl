@@ -1,6 +1,7 @@
 module GPLab
 
 using AbstractGPs
+using ChainRulesCore
 using LineSearches
 using LinearAlgebra
 using Optim
@@ -9,10 +10,12 @@ using Statistics
 using StatsFuns
 using Zygote
 
-export GPRegressor, RepGPRegressor, fit
+export GPRegressor, RepGPRegressor, LaplaceGPRegressor, fit
 
 include("util.jl")
+include("likelihood.jl")
 include("std_gpr.jl")
 include("rep_gpr.jl")
+include("laplace_gpr.jl")
 
 end

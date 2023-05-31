@@ -1,11 +1,7 @@
-function _init_params(x)
+function _init_kernel_params(x)
     return (
-        mean = 0.0,
-        noise_var = positive(1.0),
-        k = (
-            var = positive(1.0),
-            precision = inv.(maximum(x; dims=1) .- minimum(x; dims=1))[:]
-        )
+        var = positive(1.0),
+        precision = positive(inv.(maximum(x; dims=1) .- minimum(x; dims=1))[:])
     )
 end
 
