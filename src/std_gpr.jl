@@ -40,3 +40,11 @@ end
 function _gp(base_kernel::Kernel, params)
     return GP(params.mean, _kernel(base_kernel, params.k))
 end
+
+function predict_latent(gpfit::GPRegression, xtest::AbstractMatrix)
+    return reshape(mean(gpfit.posterior, RowVecs(xtest)), :, 1)
+end
+
+function predict(gpfit::GPRegression, xtest::AbstractMatrix)
+    return marginals(gpfit.posterior(RowVecs(xtest), gpfit.params.noise_var))
+end
