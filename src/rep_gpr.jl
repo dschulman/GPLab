@@ -9,6 +9,7 @@ struct RepGPRegression{Tk<:Kernel}
     params
     kernel::Tk
     Cchol::Cholesky
+    x
     α
 end
 
@@ -33,7 +34,7 @@ function fit(gpr::RepGPRegressor, x::AbstractMatrix, y::AbstractVector)
     kernel = _kernel(gpr.kernel, params.k)
     Cchol = _Cchol(kernel, x, ystats, params.noise_var)
     α = Cchol \ (ystats.u .- params.mean)
-    return RepGPRegression(lml, params, kernel, Cchol, α)
+    return RepGPRegression(lml, params, kernel, Cchol, x, α)
 end
 
 function _sufficient_statistics(y::AbstractVector)
@@ -68,4 +69,18 @@ function _logV(ystats, noise_var)
 		logdet(M) +
 		((ystats.m ⋅ ystats.v) / noise_var)
 	)
+end
+
+function predict_latent(gpfit::RepGPRegression, xtest::AbstractMatrix)
+    Kstar = kernelmatrix(gpfit.kernel, RowVecs(gpfit.x), RowVecs(xtest))
+    fstar = gpfit.params.mean .+ (Kstar' * gpfit.α)
+    return reshape(fstar, :, 1)
+end
+
+function predict(gpfit::RepGPRegression, xtest::AbstractMatrix)
+    Kstar = kernelmatrix(gpfit.kernel, RowVecs(gpfit.x), RowVecs(xtest))
+    Kstarstar = kernelmatrix_diag(gpfit.kernel, RowVecs(xtest))
+    mean = gpfit.params.mean .+ (Kstar' * gpfit.α)
+    var = Kstarstar .- AbstractGPs.diag_Xt_invA_X(gpfit.Cchol, Kstar) .+ gpfit.params.noise_var
+    return Normal.(mean, sqrt.(var))
 end
