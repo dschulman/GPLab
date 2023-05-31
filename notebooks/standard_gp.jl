@@ -152,6 +152,8 @@ let
 	scatter!(ax, x, y)
 	lines!(ax, xtest, μ)
 	band!(ax, xtest, μ .- (2 * σ), μ .+ (2 * σ); color=(:grey, 0.5))
+	σn = sqrt.(var(opt_p_fx(xtest, opt_params.noise_var)))
+	band!(ax, xtest, μ .- (2 * σn), μ .+ (2 * σn); color=(:grey, 0.25))
 	fig
 end
 
