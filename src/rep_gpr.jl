@@ -71,16 +71,18 @@ function _logV(ystats, noise_var)
 	)
 end
 
-function predict_latent(gpfit::RepGPRegression, xtest::AbstractMatrix)
-    Kstar = kernelmatrix(gpfit.kernel, RowVecs(gpfit.x), RowVecs(xtest))
-    fstar = gpfit.params.mean .+ (Kstar' * gpfit.α)
-    return reshape(fstar, :, 1)
-end
-
-function predict(gpfit::RepGPRegression, xtest::AbstractMatrix)
+function _predict(gpfit::RepGPRegression, xtest::AbstractMatrix, noise_var)
     Kstar = kernelmatrix(gpfit.kernel, RowVecs(gpfit.x), RowVecs(xtest))
     Kstarstar = kernelmatrix_diag(gpfit.kernel, RowVecs(xtest))
     mean = gpfit.params.mean .+ (Kstar' * gpfit.α)
-    var = Kstarstar .- AbstractGPs.diag_Xt_invA_X(gpfit.Cchol, Kstar) .+ gpfit.params.noise_var
+    var = Kstarstar .- AbstractGPs.diag_Xt_invA_X(gpfit.Cchol, Kstar) .+ noise_var
     return Normal.(mean, sqrt.(var))
+end
+
+function predict_latent(gpfit::RepGPRegression, xtest::AbstractMatrix)
+    return _predict(gpfit, xtest, 0.0)
+end
+
+function predict(gpfit::RepGPRegression, xtest::AbstractMatrix)
+    return _predict(gpfit, xtest, gpfit.params.noise_var)
 end

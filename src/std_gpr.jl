@@ -42,7 +42,7 @@ function _gp(base_kernel::Kernel, params)
 end
 
 function predict_latent(gpfit::GPRegression, xtest::AbstractMatrix)
-    return reshape(mean(gpfit.posterior, RowVecs(xtest)), :, 1)
+    return marginals(gpfit.posterior(RowVecs(xtest)))
 end
 
 function predict(gpfit::GPRegression, xtest::AbstractMatrix)
