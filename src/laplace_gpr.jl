@@ -8,7 +8,11 @@ LaplaceGPRegressor(lik::Tl) where {Tl<:Likelihood} = LaplaceGPRegressor(lik, Mat
 struct LaplaceGPRegression{Tk<:AbstractVector{<:Kernel}}
     approx_lml
     params
+    lik
     kernels::Tk
+    x
+    g
+    HinvB
 end
 
 function init_params(gpr::LaplaceGPRegressor, x::AbstractMatrix)
@@ -37,8 +41,14 @@ function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, y::AbstractVector)
     )
     approx_lml = - minimum(res)
     params = unflatten(Optim.minimizer(res))
-    kernels = _kernel.(gpr.kernel, params.k)
-    return LaplaceGPRegression(approx_lml, params, kernels)
+    kernels = _kernel.(Ref(gpr.kernel), params.k)
+    kms = kernelmatrix.(kernels, Ref(RowVecs(x)))
+    K = cat(kms...; dims=(1,2))
+    μ = vcat(fill.(params.mean, length(y))...)
+    f, g = _posterior_mode(gpr.lik, K, μ, y)
+    H = hess_loglik(gpr.lik, f, y)
+    B = lu(I - (K * H))
+    return LaplaceGPRegression(approx_lml, params, gpr.lik, kernels, x, g, H / B)
 end
 
 function _laplace_nlml(lik, K, μ, y)
@@ -116,4 +126,22 @@ function ChainRulesCore.rrule(::typeof(_laplace_nlml), lik, K, μ, y)
         return NoTangent(), Δlik, -ΔK, -Δμ, Δy
     end
     return L, _laplace_nlml_pullback
+end
+
+function predict_latent(gpfit::LaplaceGPRegression, xtest::AbstractMatrix)
+    N = size(xtest, 1)
+    C = nparam(gpfit.lik)
+    Kstars = kernelmatrix.(gpfit.kernels, Ref(RowVecs(gpfit.x)), Ref(RowVecs(xtest)))
+    Kstar = cat(Kstars...; dims=(1,2))
+    μstar = vcat(fill.(gpfit.params.mean, N)...)
+    mean = μstar + (Kstar' * gpfit.g)
+    mean = reshape(mean, N, C)
+    means = eachrow(mean)
+    Kstarstars = kernelmatrix_diag.(gpfit.kernels, Ref(RowVecs(xtest)))
+    Kstarstar = Diagonal(vcat(Kstarstars...))
+    cov = Kstarstar + (Kstar' * gpfit.HinvB * Kstar)
+    cov = reshape(cov, N, C, N, C)
+    # Note we force symmetry to deal with slight rounding errors
+    covs = [Symmetric(cov[i, :, i, :]) for i=1:N]
+    return MvNormal.(means, covs)
 end
