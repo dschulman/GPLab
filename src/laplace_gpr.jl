@@ -23,14 +23,15 @@ function init_params(gpr::LaplaceGPRegressor, x::AbstractMatrix)
     )
 end
 
-function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, y::AbstractVector)
+function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector)
+    y = compute_statistics(gpr.lik, yraw)
     initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x))
     function _laplace_nlml_wrapper(θ)
         params = unflatten(θ)
         kernels = _kernel.(Ref(gpr.kernel), params.k)
         kms = kernelmatrix.(kernels, Ref(RowVecs(x)))
         K = cat(kms...; dims=(1,2))
-        μ = vcat(fill.(params.mean, length(y))...)
+        μ = vcat(fill.(params.mean, size(x, 1))...)
         return _laplace_nlml(gpr.lik, K, μ, y)
     end
     res = Optim.optimize(
@@ -44,7 +45,7 @@ function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, y::AbstractVector)
     kernels = _kernel.(Ref(gpr.kernel), params.k)
     kms = kernelmatrix.(kernels, Ref(RowVecs(x)))
     K = cat(kms...; dims=(1,2))
-    μ = vcat(fill.(params.mean, length(y))...)
+    μ = vcat(fill.(params.mean, size(x, 1))...)
     f, g = _posterior_mode(gpr.lik, K, μ, y)
     H = hess_loglik(gpr.lik, f, y)
     B = lu(I - (K * H))
@@ -101,7 +102,7 @@ end
 
 function _posterior_mode_grads(lik, f, K, m, y)
     g = grad_loglik(lik, f, y)
-    W = fisher_info(lik, f)
+    W = fisher_info(lik, f, y)
     B = lu(I + (K * W))
     ng = B \ ((K * g) - f + m)
     return g, ng

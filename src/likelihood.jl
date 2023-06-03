@@ -42,7 +42,7 @@ function hess_loglik(lik::Gaussian, θ, y)
     return [ddm dm_dlv ; dm_dlv ddlv]
 end
 
-function fisher_info(lik::Gaussian, θ)
+function fisher_info(lik::Gaussian, θ, y)
     logvar = _each_param(lik, θ)[2]
     return Diagonal([exp.(-logvar) ; fill(0.5, size(logvar))])
 end

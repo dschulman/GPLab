@@ -114,6 +114,21 @@ ylpred = predict(lgpfit, xtest)
 # ╔═╡ 142f64c7-9788-44dd-a23b-535895f803dc
 plot_pred(xtest, ylpred)
 
+# ╔═╡ e9830e54-b107-4600-81c4-b80bdd25a0d7
+lrgrp = LaplaceGPRegressor(GPLab.RepGaussian())
+
+# ╔═╡ 9a379a3a-13e6-401b-a8d6-b2f02933ab34
+lrgpfit = fit(lrgrp, xr, yr)
+
+# ╔═╡ da878c54-1461-44b6-8e17-105b7c3bee60
+lrgpfit.params
+
+# ╔═╡ c2d7cc7a-81e1-48bb-9447-e96f275e485a
+ylrpred = predict(lrgpfit, xtest)
+
+# ╔═╡ b02ba126-3388-4c8a-be75-fe35650bbd99
+plot_pred(xtest, ylrpred)
+
 # ╔═╡ Cell order:
 # ╠═11220fee-00bb-11ee-228b-ada59a3eff31
 # ╠═d1c4d64c-7096-48b9-b2de-3493c5d37521
@@ -146,3 +161,8 @@ plot_pred(xtest, ylpred)
 # ╠═0833fe3b-05bc-4483-a2da-29a740c958b5
 # ╠═dcd3f78c-a841-4e2a-ab73-6087e15731f2
 # ╠═142f64c7-9788-44dd-a23b-535895f803dc
+# ╠═e9830e54-b107-4600-81c4-b80bdd25a0d7
+# ╠═9a379a3a-13e6-401b-a8d6-b2f02933ab34
+# ╠═da878c54-1461-44b6-8e17-105b7c3bee60
+# ╠═c2d7cc7a-81e1-48bb-9447-e96f275e485a
+# ╠═b02ba126-3388-4c8a-be75-fe35650bbd99

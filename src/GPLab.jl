@@ -15,6 +15,7 @@ export GPRegressor, RepGPRegressor, LaplaceGPRegressor, fit, predict_latent, pre
 
 include("util.jl")
 include("likelihood.jl")
+include("rep_likelihood.jl")
 include("std_gpr.jl")
 include("rep_gpr.jl")
 include("laplace_gpr.jl")
