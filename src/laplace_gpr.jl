@@ -145,3 +145,8 @@ function predict_latent(gpfit::LaplaceGPRegression, xtest::AbstractMatrix)
     covs = [Symmetric(cov[i, :, i, :]) for i=1:N]
     return MvNormal.(means, covs)
 end
+
+function predict(gpfit::LaplaceGPRegression, xtest::AbstractMatrix)
+    latents = predict_latent(gpfit, xtest)
+    return postpred.(Ref(gpfit.lik), latents)
+end

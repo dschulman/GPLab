@@ -46,3 +46,10 @@ function fisher_info(lik::Gaussian, θ)
     logvar = _each_param(lik, θ)[2]
     return Diagonal([exp.(-logvar) ; fill(0.5, size(logvar))])
 end
+
+function postpred(::Gaussian, θ)
+    emean, elogvar = mean(θ)
+    vmean, vlogvar = var(θ)
+    yvar = vmean + exp(elogvar + (vlogvar / 2))
+    return Normal(emean, sqrt(yvar))
+end
