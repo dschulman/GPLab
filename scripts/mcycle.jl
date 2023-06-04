@@ -100,7 +100,7 @@ yrpred = predict(rgpfit, xtest)
 plot_pred(xtest, yrpred)
 
 # ╔═╡ b14136d4-15ad-4ce2-8427-6f18710a9389
-lgpr = LaplaceGPRegressor(GPLab.Gaussian())
+lgpr = LaplaceGPRegressor(GaussianLikelihood())
 
 # ╔═╡ 4b8aa6ee-c054-4721-8bf5-e3c36b8e8a21
 lgpfit = fit(lgpr, x, y)
@@ -115,7 +115,7 @@ ylpred = predict(lgpfit, xtest)
 plot_pred(xtest, ylpred)
 
 # ╔═╡ e9830e54-b107-4600-81c4-b80bdd25a0d7
-lrgrp = LaplaceGPRegressor(GPLab.RepGaussian())
+lrgrp = LaplaceGPRegressor(RepGaussianLikelihood())
 
 # ╔═╡ 9a379a3a-13e6-401b-a8d6-b2f02933ab34
 lrgpfit = fit(lrgrp, xr, yr)

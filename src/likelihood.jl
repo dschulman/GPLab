@@ -2,19 +2,19 @@ abstract type Likelihood end
 
 _each_param(lik::Likelihood, θ) = eachcol(reshape(θ, :, nparam(lik)))
 
-struct Gaussian <: Likelihood end
+struct GaussianLikelihood <: Likelihood end
 
-nparam(lik::Gaussian) = 2
+nparam(lik::GaussianLikelihood) = 2
 
-compute_statistics(::Gaussian, y) = y
+compute_statistics(::GaussianLikelihood, y) = y
 
-function init_latent(::Gaussian, y)
+function init_latent(::GaussianLikelihood, y)
     n = length(y)
     m, v = mean_and_var(y; corrected=false)
     return [fill(m, n) ; fill(log(v), n)]
 end
 
-function loglik(lik::Gaussian, θ, y)
+function loglik(lik::GaussianLikelihood, θ, y)
     mean, logvar = _each_param(lik, θ)
     return -0.5 * (
         (length(y) * log2π) +
@@ -23,7 +23,7 @@ function loglik(lik::Gaussian, θ, y)
     )
 end
 
-function grad_loglik(lik::Gaussian, θ, y)
+function grad_loglik(lik::GaussianLikelihood, θ, y)
     mean, logvar = _each_param(lik, θ)
     z = y .- mean
     prec = exp.(-logvar)
@@ -32,7 +32,7 @@ function grad_loglik(lik::Gaussian, θ, y)
     return [dmean ; dlogvar]
 end
 
-function hess_loglik(lik::Gaussian, θ, y)
+function hess_loglik(lik::GaussianLikelihood, θ, y)
     mean, logvar = _each_param(lik, θ)
     z = y .- mean
     prec = exp.(-logvar)
@@ -42,12 +42,12 @@ function hess_loglik(lik::Gaussian, θ, y)
     return [ddm dm_dlv ; dm_dlv ddlv]
 end
 
-function fisher_info(lik::Gaussian, θ, y)
+function fisher_info(lik::GaussianLikelihood, θ, y)
     logvar = _each_param(lik, θ)[2]
     return Diagonal([exp.(-logvar) ; fill(0.5, size(logvar))])
 end
 
-function postpred(::Gaussian, θ)
+function postpred(::GaussianLikelihood, θ)
     emean, elogvar = mean(θ)
     vmean, vlogvar = var(θ)
     yvar = vmean + exp(elogvar + (vlogvar / 2))

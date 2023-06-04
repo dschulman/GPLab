@@ -6,19 +6,19 @@ fisher_info(lik::RepLikelihood, θ, y) = fisher_info(base_likelihood(lik), θ, n
 
 postpred(lik::RepLikelihood, θ) = postpred(base_likelihood(lik), θ)
 
-struct RepGaussian <: RepLikelihood end
+struct RepGaussianLikelihood <: RepLikelihood end
 
-base_likelihood(::RepGaussian) = Gaussian()
+base_likelihood(::RepGaussianLikelihood) = GaussianLikelihood()
 
-function compute_statistics(::RepGaussian, y)
+function compute_statistics(::RepGaussianLikelihood, y)
     u = mean.(y)
     v = varm.(y, u; corrected=false)
     return (u, v, m=length.(y))
 end
 
-nrepl(::RepGaussian, y) = y.m
+nrepl(::RepGaussianLikelihood, y) = y.m
 
-function init_latent(::RepGaussian, y)
+function init_latent(::RepGaussianLikelihood, y)
     n = sum(y.m)
     mean = sum(y.u .* y.m) / n
     var = sum(y.v .* y.m) / n
@@ -26,7 +26,7 @@ function init_latent(::RepGaussian, y)
     return [fill(mean, len) ; fill(log(var), len)]
 end
 
-function loglik(lik::RepGaussian, θ, y)
+function loglik(lik::RepGaussianLikelihood, θ, y)
     mean, logvar = _each_param(lik, θ)
     prec = exp.(-logvar)
     return -0.5 * sum(y.m .* (
@@ -36,7 +36,7 @@ function loglik(lik::RepGaussian, θ, y)
     ))
 end
 
-function grad_loglik(lik::RepGaussian, θ, y)
+function grad_loglik(lik::RepGaussianLikelihood, θ, y)
     mean, logvar = _each_param(lik, θ)
     prec = exp.(-logvar)
     z = y.u .- mean
@@ -45,7 +45,7 @@ function grad_loglik(lik::RepGaussian, θ, y)
     return [dmean ; dlogvar]
 end
 
-function hess_loglik(lik::RepGaussian, θ, y)
+function hess_loglik(lik::RepGaussianLikelihood, θ, y)
     mean, logvar = _each_param(lik, θ)
     prec = exp.(-logvar)
     z = y.u .- mean
