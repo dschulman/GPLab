@@ -24,7 +24,7 @@ function init_params(gpr::LaplaceGPRegressor, x::AbstractMatrix)
 end
 
 function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector)
-    y = compute_statistics(gpr.lik, yraw)
+    y = sufficient_stats.(Ref(gpr.lik), yraw)
     initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x))
     function _laplace_nlml_wrapper(θ)
         params = unflatten(θ)
@@ -78,13 +78,13 @@ end
 # In _laplace_nlml that lets us avoid inv(K):
 #  (f - μ)' inv(K) (f - μ) = dloglik(f, y) ⋅ (f - μ)
 function _posterior_mode(lik, K, m, y; maxiter=500)
-    f = init_latent(lik, y)
+    f = repeat(init_latent(lik, y); inner=length(y))
     g, ng = _posterior_mode_grads(lik, f, K, m, y)
     α = 1.0
     for i in 1:maxiter
         f_new = f + (α * ng)
         if isapprox(f, f_new)
-#            println("converged on iteration $i")
+            # println("converged on iteration $i")
             break
         end            
         g_new, ng_new = _posterior_mode_grads(lik, f_new, K, m, y)

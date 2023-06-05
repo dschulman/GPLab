@@ -115,7 +115,7 @@ ylpred = predict(lgpfit, xtest)
 plot_pred(xtest, ylpred)
 
 # ╔═╡ e9830e54-b107-4600-81c4-b80bdd25a0d7
-lrgrp = LaplaceGPRegressor(RepGaussianLikelihood())
+lrgrp = LaplaceGPRegressor(Replicate(GaussianLikelihood()))
 
 # ╔═╡ 9a379a3a-13e6-401b-a8d6-b2f02933ab34
 lrgpfit = fit(lrgrp, xr, yr)
