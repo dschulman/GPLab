@@ -12,12 +12,12 @@ using StatsFuns
 using Zygote
 
 export GPRegressor, RepGPRegressor, LaplaceGPRegressor, fit, predict_latent, predict,
-    GaussianLikelihood,
-    Replicate
+    Likelihood, SimpleLikelihood, Replicate,
+    GaussianLikelihood
 
 include("util.jl")
 include("likelihood.jl")
-include("rep_likelihood.jl")
+include("likelihoods/gaussian.jl")
 include("std_gpr.jl")
 include("rep_gpr.jl")
 include("laplace_gpr.jl")

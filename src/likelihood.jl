@@ -32,47 +32,36 @@ sufficient_stats(::SimpleLikelihood, y) = y
 
 nobs(::SimpleLikelihood, y) = ones(size(y))
 
-struct GaussianLikelihood <: SimpleLikelihood end
-
-nparam(lik::GaussianLikelihood) = 2
-
-function init_latent(::GaussianLikelihood, y)
-    m, v = mean_and_var(y; corrected=false)
-    return [m, log(v)]
+struct Replicate{Tb <: SimpleLikelihood} <: Likelihood
+    base::Tb
 end
 
-function loglik1(::GaussianLikelihood, θ, y)
-    mean, logvar = θ
-    return -0.5 * (log2π + logvar + ((y-mean)^2 * exp(-logvar)))
+sufficient_stats(::Replicate{Tb}, y) where {Tb} = y
+
+nobs(::Replicate{Tb}, y) where {Tb} = length.(y)
+
+nparam(lik::Replicate{Tb}) where {Tb} = nparam(lik.base)
+
+function init_latent(lik::Replicate{Tb}, y) where {Tb}
+    return init_latent(lik.base, reduce(vcat, y))
 end
 
-function grad_loglik1(::GaussianLikelihood, θ, y)
-    mean, logvar = θ
-    z = y - mean
-    prec = exp(-logvar)
-    dmean = z * prec
-    dlogvar = -0.5 + (0.5 * z * z * prec)
-    return [dmean, dlogvar]
+function loglik1(lik::Replicate{Tb}, θ, y) where {Tb}
+    return sum(loglik1.(Ref(lik.base), Ref(θ), y))
 end
 
-function hess_loglik1(lik::GaussianLikelihood, θ, y)
-    mean, logvar = θ
-    z = y - mean
-    prec = exp(-logvar)
-    ddm = -prec
-    dm_dlv = -z * prec
-    ddlv = -0.5 * z * z * prec
-    return [ddm dm_dlv ; dm_dlv ddlv]
+function grad_loglik1(lik::Replicate{Tb}, θ, y) where {Tb}
+    return sum(grad_loglik1.(Ref(lik.base), Ref(θ), y))
 end
 
-function fisher_info1(::GaussianLikelihood, θ)
-    logvar = θ[2]
-    return Diagonal([exp(-logvar), 0.5])
+function hess_loglik1(lik::Replicate{Tb}, θ, y) where {Tb}
+    return sum(hess_loglik1.(Ref(lik.base), Ref(θ), y))
 end
 
-function postpred(::GaussianLikelihood, θ)
-    emean, elogvar = mean(θ)
-    vmean, vlogvar = var(θ)
-    yvar = vmean + exp(elogvar + (vlogvar / 2))
-    return Normal(emean, sqrt(yvar))
+function fisher_info1(lik::Replicate{Tb}, θ) where {Tb}
+    return fisher_info1(lik.base, θ)
+end
+
+function postpred(lik::Replicate{Tb}, θ) where {Tb}
+    return postpred(lik.base, θ)
 end
