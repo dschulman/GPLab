@@ -1,6 +1,6 @@
 abstract type Likelihood end
 
-_params(lik::Likelihood, θ) = eachrow(reshape(θ, :, nparam(lik)))
+_params(lik::Likelihood, θ) = eachcol(reshape(θ, :, nparam(lik)))
 
 function loglik(lik::Likelihood, θ, y)
     return sum(loglik1.(Ref(lik), _params(lik, θ), y))
@@ -28,40 +28,30 @@ end
 
 abstract type SimpleLikelihood <: Likelihood end
 
-sufficient_stats(::SimpleLikelihood, y) = y
-
-nobs(::SimpleLikelihood, y) = ones(size(y))
+compute_stats(::SimpleLikelihood, y) = y
 
 struct Replicate{Tb <: SimpleLikelihood} <: Likelihood
     base::Tb
 end
 
-sufficient_stats(::Replicate{Tb}, y) where {Tb} = y
+nparam(lik::Replicate) = nparam(lik.base)
 
-nobs(::Replicate{Tb}, y) where {Tb} = length.(y)
-
-nparam(lik::Replicate{Tb}) where {Tb} = nparam(lik.base)
-
-function init_latent(lik::Replicate{Tb}, y) where {Tb}
-    return init_latent(lik.base, reduce(vcat, y))
+function compute_stats(lik::Replicate, y)
+    m = length.(y)
+    M = Diagonal(repeat(m, nparam(lik)))
+    u = ones.(m)
+    U = cat(repeat(u, nparam(lik))...; dims=(1,2))
+    return (y=reduce(vcat, y), U, M)
 end
 
-function loglik1(lik::Replicate{Tb}, θ, y) where {Tb}
-    return sum(loglik1.(Ref(lik.base), Ref(θ), y))
-end
+init_latent(lik::Replicate, y) = init_latent(lik.base, y.y)
 
-function grad_loglik1(lik::Replicate{Tb}, θ, y) where {Tb}
-    return sum(grad_loglik1.(Ref(lik.base), Ref(θ), y))
-end
+loglik(lik::Replicate, θ, y) = loglik(lik.base, y.U * θ, y.y)
 
-function hess_loglik1(lik::Replicate{Tb}, θ, y) where {Tb}
-    return sum(hess_loglik1.(Ref(lik.base), Ref(θ), y))
-end
+grad_loglik(lik::Replicate, θ, y) = y.U' * grad_loglik(lik.base, y.U * θ, y.y)
 
-function fisher_info1(lik::Replicate{Tb}, θ) where {Tb}
-    return fisher_info1(lik.base, θ)
-end
+hess_loglik(lik::Replicate, θ, y) = y.U' * hess_loglik(lik.base, y.U * θ, y.y) * y.U
 
-function postpred(lik::Replicate{Tb}, θ) where {Tb}
-    return postpred(lik.base, θ)
-end
+fisher_info(lik::Replicate, θ, y) = y.M * fisher_info(lik.base, θ, nothing)
+
+postpred(lik::Replicate, θ) = postpred(lik.base, θ)
