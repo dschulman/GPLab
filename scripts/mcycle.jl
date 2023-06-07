@@ -103,7 +103,7 @@ plot_pred(xtest, yrpred)
 lgpr = LaplaceGPRegressor(GaussianLikelihood())
 
 # ╔═╡ 4b8aa6ee-c054-4721-8bf5-e3c36b8e8a21
-lgpfit = fit(lgpr, x, y)
+lgpfit = fit(lgpr, x, y; trace=true)
 
 # ╔═╡ 0833fe3b-05bc-4483-a2da-29a740c958b5
 lgpfit.params
@@ -118,7 +118,7 @@ plot_pred(xtest, ylpred)
 lrgpr = LaplaceGPRegressor(Replicate(GaussianLikelihood()))
 
 # ╔═╡ 9a379a3a-13e6-401b-a8d6-b2f02933ab34
-lrgpfit = fit(lrgpr, xr, yr)
+lrgpfit = fit(lrgpr, xr, yr; trace=true)
 
 # ╔═╡ da878c54-1461-44b6-8e17-105b7c3bee60
 lrgpfit.params

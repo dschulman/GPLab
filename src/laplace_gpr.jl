@@ -23,23 +23,29 @@ function init_params(gpr::LaplaceGPRegressor, x::AbstractMatrix)
     )
 end
 
-function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector)
+function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector; postmode_warmstart=true, trace=false)
     y = compute_stats(gpr.lik, yraw)
     n = size(x, 1)
     initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x))
+    f_cache = Ref{Vector}()
+    if trace
+        opts = Optim.Options(show_trace=true, show_every=1)
+    else
+        opts = Optim.Options()
+    end
     function _laplace_nlml_wrapper(θ)
         params = unflatten(θ)
         kernels = _kernel.(Ref(gpr.kernel), params.k)
         kms = kernelmatrix.(kernels, Ref(RowVecs(x)))
         K = cat(kms...; dims=(1,2))
         μ = vcat(fill.(params.mean, n)...)
-        return _laplace_nlml(gpr.lik, n, K, μ, y)
+        return _laplace_nlml(gpr.lik, n, K, μ, y; f_cache, use_cache=postmode_warmstart)
     end
     res = Optim.optimize(
         _zygote_fg!(_laplace_nlml_wrapper),
         initθ,
         Optim.LBFGS(alphaguess=LineSearches.InitialStatic(scaled=true)),
-        Optim.Options(show_trace=true, show_every=1)
+        opts
     )
     approx_lml = - minimum(res)
     params = unflatten(Optim.minimizer(res))
@@ -47,18 +53,18 @@ function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector)
     kms = kernelmatrix.(kernels, Ref(RowVecs(x)))
     K = cat(kms...; dims=(1,2))
     μ = vcat(fill.(params.mean, n)...)
-    f, g = _posterior_mode(gpr.lik, n, K, μ, y)
+    f, g = _posterior_mode(gpr.lik, n, K, μ, y; f_cache, use_cache=postmode_warmstart)
     H = hess_loglik(gpr.lik, f, y)
     B = lu(I - (K * H))
     return LaplaceGPRegression(approx_lml, params, gpr.lik, kernels, x, g, H / B)
 end
 
-function _laplace_nlml(lik, n, K, μ, y)
-    return _laplace_nlml_and_intermediates(lik, n, K, μ, y)[1]
+function _laplace_nlml(lik, n, K, μ, y; kwargs...)
+    return _laplace_nlml_and_intermediates(lik, n, K, μ, y; kwargs...)[1]
 end
 
-function _laplace_nlml_and_intermediates(lik, n, K, μ, y)
-    f, g = _posterior_mode(lik, n, K, μ, y)
+function _laplace_nlml_and_intermediates(lik, n, K, μ, y; kwargs...)
+    f, g = _posterior_mode(lik, n, K, μ, y; kwargs...)
     ll = loglik(lik, f, y)
     H, Hback = Zygote.pullback(hess_loglik, lik, f, y)
     B = lu(I - (K * H))
@@ -82,8 +88,12 @@ end
 #
 # In _laplace_nlml that lets us avoid inv(K):
 #  (f - μ)' inv(K) (f - μ) = dloglik(f, y) ⋅ (f - μ)
-function _posterior_mode(lik, n, K, m, y; maxiter=500)
-    f = repeat(init_latent(lik, y); inner=n)
+function _posterior_mode(lik, n, K, m, y; f_cache, use_cache=true, maxiter=500)
+    if use_cache && isassigned(f_cache)
+        f = f_cache[]
+    else
+        f = repeat(init_latent(lik, y); inner=n)
+    end
     g, ng = _posterior_mode_grads(lik, f, K, m, y)
     α = 1.0
     for i in 1:maxiter
@@ -102,6 +112,9 @@ function _posterior_mode(lik, n, K, m, y; maxiter=500)
             α = 0.5 * α
         end
     end
+    if use_cache
+        f_cache[] = f
+    end
     return f, g
 end
 
@@ -113,8 +126,8 @@ function _posterior_mode_grads(lik, f, K, m, y)
     return g, ng
 end
 
-function ChainRulesCore.rrule(::typeof(_laplace_nlml), lik, n, K, μ, y)
-    L, g, H, Hback, B = _laplace_nlml_and_intermediates(lik, n, K, μ, y)
+function ChainRulesCore.rrule(::typeof(_laplace_nlml), lik, n, K, μ, y; kwargs...)
+    L, g, H, Hback, B = _laplace_nlml_and_intermediates(lik, n, K, μ, y; kwargs...)
     function _laplace_nlml_pullback(ΔL)
         Δlik = @not_implemented("gradient of nlml wrt lik params")
         Δn = @not_implemented("gradient of nlml wrt n")
