@@ -54,12 +54,16 @@ function fit(gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector)
 end
 
 function _laplace_nlml(lik, n, K, μ, y)
+    return _laplace_nlml_and_intermediates(lik, n, K, μ, y)[1]
+end
+
+function _laplace_nlml_and_intermediates(lik, n, K, μ, y)
     f, g = _posterior_mode(lik, n, K, μ, y)
     ll = loglik(lik, f, y)
-    H = hess_loglik(lik, f, y)
+    H, Hback = Zygote.pullback(hess_loglik, lik, f, y)
     B = lu(I - (K * H))
     L = (0.5 * (g ⋅ (f - μ))) + (0.5 * logdet(B)) - ll
-    return L
+    return L, g, H, Hback, B
 end
 
 # Fisher scoring:
@@ -110,11 +114,7 @@ function _posterior_mode_grads(lik, f, K, m, y)
 end
 
 function ChainRulesCore.rrule(::typeof(_laplace_nlml), lik, n, K, μ, y)
-    f, g = _posterior_mode(lik, n, K, μ, y)
-    ll = loglik(lik, f, y)
-    H, Hback = Zygote.pullback(hess_loglik, lik, f, y)
-    B = lu(I - (K * H))
-    L = (0.5 * (g ⋅ (f - μ))) + (0.5 * logdet(B)) - ll
+    L, g, H, Hback, B = _laplace_nlml_and_intermediates(lik, n, K, μ, y)
     function _laplace_nlml_pullback(ΔL)
         Δlik = @not_implemented("gradient of nlml wrt lik params")
         Δn = @not_implemented("gradient of nlml wrt n")
