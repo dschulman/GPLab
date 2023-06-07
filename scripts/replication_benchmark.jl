@@ -73,47 +73,23 @@ rep_trial = @benchmark fit(RepGPRegressor(), xrep, yrep)
 # ╔═╡ 90c665ab-3122-4e3a-8645-b0a14ae013b5
 ratio(median(std_trial), median(rep_trial))
 
-# ╔═╡ 8ac732ca-5955-4332-b8ac-a5dbe29f81cb
-fitlstd = fit(LaplaceGPRegressor(GaussianLikelihood()), x, y)
-
-# ╔═╡ 60700481-df64-4769-a192-57cb4e0dc95d
-fitlstd.approx_lml
-
-# ╔═╡ 72ffe1e3-2676-42d8-b467-6619bac70e31
-fitlstd.params
-
-# ╔═╡ a9eafb57-f1fe-4000-8b9d-84ba7f6f87d7
-lstd_trial = @benchmark fit(LaplaceGPRegressor(GaussianLikelihood()), x, y) seconds=20
-
-# ╔═╡ a4811ceb-3124-4b22-864a-15f8484cbbb9
-fitlrep = fit(LaplaceGPRegressor(Replicate(GaussianLikelihood())), xrep, yrep)
-
-# ╔═╡ 72c7d34b-87ff-4329-960c-623df5f5d6c0
-fitlrep.approx_lml
-
-# ╔═╡ 77a3e9bc-1779-46ab-b5d7-4474cb50fac9
-fitlrep.params
-
-# ╔═╡ 076e485d-a6c0-4b65-a15b-e9406aca29d7
-lrep_trial = @benchmark fit(LaplaceGPRegressor(Replicate(GaussianLikelihood())), xrep, yrep) seconds=20
-
-# ╔═╡ 1cdd538a-4e5b-43a4-95b7-9b905b6434d6
-ratio(median(lstd_trial), median(lrep_trial))
-
-# ╔═╡ 50b93adf-7959-48f0-81dd-5f57dc8c0daf
-lstd_cold_trial = @benchmark fit(LaplaceGPRegressor(GaussianLikelihood()), x, y; postmode_warmstart=false) seconds=20
-
-# ╔═╡ 04a4e980-3e29-476e-a76e-df187cae1b47
-lrep_cold_trial = @benchmark fit(LaplaceGPRegressor(Replicate(GaussianLikelihood())), xrep, yrep; postmode_warmstart=false) seconds=20
-
-# ╔═╡ b1459ed8-2d6f-46f1-b528-8219157827f0
-ratio(median(lstd_cold_trial), median(lrep_cold_trial))
-
-# ╔═╡ 65e3d501-e1d5-47b9-8f32-1cd92d11e40b
-ratio(median(lstd_cold_trial), median(lstd_trial))
-
 # ╔═╡ bba0a0b8-a2fd-43f8-8945-19c3224edeac
-ratio(median(lrep_cold_trial), median(lrep_trial))
+lgpr = LaplaceGPRegressor(GaussianLikelihood())
+
+# ╔═╡ eb36b1f9-c2ee-4596-8108-32f433c1aa01
+@timev fit(lgpr, x, y)
+
+# ╔═╡ 2c2dc8a7-bef6-49c1-9e24-d140dca7d0d4
+@timev fit(lgpr, x, y)
+
+# ╔═╡ 0f38804d-a6b7-40cb-988c-fd684b336c74
+lrgpr = LaplaceGPRegressor(Replicate(GaussianLikelihood()))
+
+# ╔═╡ 695c10cd-eb50-45a8-8f6e-78b27b092c9e
+@timev fit(lrgpr, xrep, yrep)
+
+# ╔═╡ df2f99d9-6b83-41e3-aede-457045addc73
+@timev fit(lrgpr, xrep, yrep)
 
 # ╔═╡ Cell order:
 # ╠═4d8e010c-00b8-11ee-3807-13e4fb91a23a
@@ -137,17 +113,9 @@ ratio(median(lrep_cold_trial), median(lrep_trial))
 # ╠═de92ca72-3de2-49a7-b848-7545b77c3f15
 # ╠═1d59d090-2e73-48a7-8d3e-1e6b892bbb4a
 # ╠═90c665ab-3122-4e3a-8645-b0a14ae013b5
-# ╠═8ac732ca-5955-4332-b8ac-a5dbe29f81cb
-# ╠═60700481-df64-4769-a192-57cb4e0dc95d
-# ╠═72ffe1e3-2676-42d8-b467-6619bac70e31
-# ╠═a9eafb57-f1fe-4000-8b9d-84ba7f6f87d7
-# ╠═a4811ceb-3124-4b22-864a-15f8484cbbb9
-# ╠═72c7d34b-87ff-4329-960c-623df5f5d6c0
-# ╠═77a3e9bc-1779-46ab-b5d7-4474cb50fac9
-# ╠═076e485d-a6c0-4b65-a15b-e9406aca29d7
-# ╠═1cdd538a-4e5b-43a4-95b7-9b905b6434d6
-# ╠═50b93adf-7959-48f0-81dd-5f57dc8c0daf
-# ╠═04a4e980-3e29-476e-a76e-df187cae1b47
-# ╠═b1459ed8-2d6f-46f1-b528-8219157827f0
-# ╠═65e3d501-e1d5-47b9-8f32-1cd92d11e40b
 # ╠═bba0a0b8-a2fd-43f8-8945-19c3224edeac
+# ╠═eb36b1f9-c2ee-4596-8108-32f433c1aa01
+# ╠═2c2dc8a7-bef6-49c1-9e24-d140dca7d0d4
+# ╠═0f38804d-a6b7-40cb-988c-fd684b336c74
+# ╠═695c10cd-eb50-45a8-8f6e-78b27b092c9e
+# ╠═df2f99d9-6b83-41e3-aede-457045addc73
