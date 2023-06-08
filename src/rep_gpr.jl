@@ -13,17 +13,20 @@ struct RepGPRegression{Tk<:Kernel}
     α
 end
 
-function init_params(::RepGPRegressor, x::AbstractMatrix)
+function init_params(::RepGPRegressor, x, y; assume_noise=0.5)
+    n = sum(y.m)
+    u = sum(y.u .* y.m) / n
+    v = sum(y.v .* y.m) / n
     return (
-        mean = 0.0,
-        noise_var = positive(1.0),
-        k = _init_kernel_params(x)
+        mean = u,
+        noise_var = positive(v * assume_noise),
+        k = _init_kernel_params(x; init_var = v * (1 - assume_noise))
     )
 end
 
 function fit(gpr::RepGPRegressor, x::AbstractMatrix, y::AbstractVector)
-    initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x))
     ystats = _sufficient_statistics(y)
+    initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x, ystats))
     res = Optim.optimize(
         _zygote_fg!(θ -> _rep_nlml(gpr.kernel, unflatten(θ), x, ystats)),
         initθ,

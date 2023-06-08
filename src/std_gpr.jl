@@ -10,16 +10,17 @@ struct GPRegression
     posterior
 end
 
-function init_params(::GPRegressor, x::AbstractMatrix)
+function init_params(::GPRegressor, x, y; assume_noise=0.5)
+    yvar = var(y)
     return (
-        mean = 0.0,
-        noise_var = positive(1.0),
-        k = _init_kernel_params(x)
+        mean = mean(y),
+        noise_var = positive(yvar * assume_noise),
+        k = _init_kernel_params(x; init_var=yvar * (1 - assume_noise))
     )
 end
 
 function fit(gpr::GPRegressor, x::AbstractMatrix, y::AbstractVector)
-    initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x))
+    initθ, unflatten = ParameterHandling.value_flatten(init_params(gpr, x, y))
     res = Optim.optimize(
         _zygote_fg!(θ -> _std_nlml(gpr.kernel, unflatten(θ), x, y)),
         initθ,

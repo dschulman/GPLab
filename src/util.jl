@@ -1,7 +1,7 @@
-function _init_kernel_params(x)
+function _init_kernel_params(x; init_var=1.0)
     return (
-        var = positive(1.0),
-        precision = positive(inv.(maximum(x; dims=1) .- minimum(x; dims=1))[:])
+        var = positive(init_var),
+        precision = positive(inv.(std(x; dims=1))[:])
     )
 end
 
