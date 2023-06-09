@@ -34,6 +34,9 @@ using Statistics
 # ╔═╡ 77c0fa20-d8e8-460a-bbe2-3020e015d707
 using CairoMakie
 
+# ╔═╡ b472d90f-a818-4fbb-9a78-950a1daed45e
+using Printf
+
 # ╔═╡ 5eb9f144-0580-11ee-243f-fbc0e75aeabb
 md"""
 A demo reimplementation of <https://juliagaussianprocesses.github.io/ApproximateGPs.jl/dev/examples/c-comparisons/>
@@ -73,6 +76,12 @@ begin
 	fig
 end
 
+# ╔═╡ 18778f50-0396-4b84-8b10-f1e3957404d0
+fgrid = f.(Xgrid) # latent function values at test points
+
+# ╔═╡ fd4e41f9-7a7d-424a-9d4f-d4efbb8cae0b
+pgrid = logistic.(fgrid)
+
 # ╔═╡ 494c0caf-da3a-41c5-8b1c-7437fd5f4259
 md"""
 ## Laplace GPR with Bernoulli-logit likelihood
@@ -99,7 +108,7 @@ logit_pred = mean.(predict(llgpfit, reshape(Xgrid, :, 1)))
 # ╔═╡ 7b46a936-9350-4c92-b9a7-e2a7a0d33114
 begin
 	fig2, ax2, _ = scatter(x, y; label="Observations")
-	lines!(ax2, x, ps; label="True probabilities")
+	lines!(ax2, Xgrid, pgrid; label="True probabilities")
 	lines!(ax2, Xgrid, logistic.(logit_latent); linestyle=:dash, label="Expit of latent mean")
 	lines!(ax2, Xgrid, logit_pred; linestyle=:dash, label="Posterior predictive")
 	axislegend(ax2)
@@ -132,7 +141,7 @@ probit_pred = mean.(predict(lpgpfit, reshape(Xgrid, :, 1)))
 # ╔═╡ e007fb25-7d73-4cd6-ae17-a6d6e57a7785
 begin
 	fig3, ax3, _ = scatter(x, y; label="Observations")
-	lines!(ax3, x, ps; label="True probabilities")
+	lines!(ax3, Xgrid, pgrid; label="True probabilities")
 	lines!(ax3, Xgrid, normcdf.(probit_latent); linestyle=:dash, label="Inv-probit of latent mean")
 	lines!(ax3, Xgrid, probit_pred; linestyle=:dash, label="Posterior predictive")
 	axislegend(ax3)
@@ -150,11 +159,34 @@ md"""
 # ╔═╡ e8eaa0f0-d446-4791-8f2c-e5b6a3dc8a24
 begin
 	fig4, ax4, _ = scatter(x, y; label="Observations")
-	lines!(ax4, x, ps; label="True probabilities")
+	lines!(ax4, Xgrid, pgrid; label="True probabilities")
 	lines!(ax4, Xgrid, logit_pred; linestyle=:dash, label="Logit")
 	lines!(ax4, Xgrid, probit_pred; linestyle=:dash, label="Probit")
 	axislegend(ax4)
 	fig4
+end
+
+# ╔═╡ f0abe295-d97b-4778-8ee6-51507eada4e3
+xrange = 41:276
+
+# ╔═╡ c36122a5-f6c6-4759-a9d2-8b43ce2ad07c
+logit_sqerr = (logit_pred[xrange] .- pgrid[xrange]).^2
+
+# ╔═╡ 8f6b3f93-375e-4fd8-8990-8e06040cc02e
+logit_rmse = sqrt(mean(logit_sqerr))
+
+# ╔═╡ f1ca7870-4946-49fb-8fa7-2219f5b9b8b3
+probit_sqerr = (probit_pred[xrange] .- pgrid[xrange]).^2
+
+# ╔═╡ 3a2433e0-b505-436a-ab4c-d4f091f3a39a
+probit_rmse = sqrt(mean(probit_sqerr))
+
+# ╔═╡ a0159d7a-8dea-48da-97a5-0e133a650100
+begin
+	fig5, ax5, _ = lines(Xgrid[xrange], logit_sqerr; label=@sprintf "Logit (RMSE=%.4f)" logit_rmse)
+	lines!(ax5, Xgrid[xrange], probit_sqerr; label=@sprintf "Probit (RMSE=%.4f)" probit_rmse)
+	axislegend(ax5)
+	fig5
 end
 
 # ╔═╡ Cell order:
@@ -169,6 +201,7 @@ end
 # ╠═c461869a-c639-4deb-b636-66f4773e70f7
 # ╠═135a1d7d-e8df-4eda-978b-2c5a1fa40451
 # ╠═77c0fa20-d8e8-460a-bbe2-3020e015d707
+# ╠═b472d90f-a818-4fbb-9a78-950a1daed45e
 # ╠═e12caa5c-8493-49b9-ab75-0227bc4438aa
 # ╠═88e4ee9c-21af-4dd3-9ac5-8562186d3862
 # ╠═7b6f5dfb-6f6c-477f-aa57-20876ee86545
@@ -177,6 +210,8 @@ end
 # ╠═0092bba9-5d4b-41ff-99ca-601d758056bc
 # ╠═d373c349-0011-4673-a7b9-f167562ab3a7
 # ╠═3ec9cfbc-e396-4065-abad-b48490bc93cd
+# ╠═18778f50-0396-4b84-8b10-f1e3957404d0
+# ╠═fd4e41f9-7a7d-424a-9d4f-d4efbb8cae0b
 # ╠═494c0caf-da3a-41c5-8b1c-7437fd5f4259
 # ╠═db4a19a8-3925-400b-abe8-8416fe797c51
 # ╠═5ab386e8-55f0-49ec-8cb4-75c9046a91f7
@@ -196,3 +231,9 @@ end
 # ╠═0d70c7d4-e16c-45fe-a440-4fecf497e29b
 # ╠═8ba4e44f-f405-41e6-a4ad-3277f79ab0e5
 # ╠═e8eaa0f0-d446-4791-8f2c-e5b6a3dc8a24
+# ╠═f0abe295-d97b-4778-8ee6-51507eada4e3
+# ╠═c36122a5-f6c6-4759-a9d2-8b43ce2ad07c
+# ╠═8f6b3f93-375e-4fd8-8990-8e06040cc02e
+# ╠═f1ca7870-4946-49fb-8fa7-2219f5b9b8b3
+# ╠═3a2433e0-b505-436a-ab4c-d4f091f3a39a
+# ╠═a0159d7a-8dea-48da-97a5-0e133a650100
