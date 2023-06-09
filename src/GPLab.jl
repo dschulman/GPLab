@@ -14,7 +14,8 @@ using Zygote
 
 export GPRegressor, RepGPRegressor, LaplaceGPRegressor, fit, predict_latent, predict,
     Likelihood, SimpleLikelihood, Replicate,
-    BernoulliLogitLikelihood, GaussianLikelihood
+    BernoulliLogitLikelihood, BernoulliProbitLikelihood,
+    GaussianLikelihood
 
 include("util.jl")
 include("likelihood.jl")

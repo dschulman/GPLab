@@ -75,43 +75,86 @@ end
 
 # ╔═╡ 494c0caf-da3a-41c5-8b1c-7437fd5f4259
 md"""
-## Fit a Laplace GPR with Bernoulli-logit likelihood
+## Laplace GPR with Bernoulli-logit likelihood
 """
 
 # ╔═╡ db4a19a8-3925-400b-abe8-8416fe797c51
-lgpr = LaplaceGPRegressor(BernoulliLogitLikelihood())
+llgpr = LaplaceGPRegressor(BernoulliLogitLikelihood())
 
 # ╔═╡ 5ab386e8-55f0-49ec-8cb4-75c9046a91f7
-lgpfit = fit(lgpr, reshape(x, :, 1), y; trace=true)
+llgpfit = fit(llgpr, reshape(x, :, 1), y; trace=true)
 
-# ╔═╡ 8a4533a2-57ef-4ce5-b9f9-10f2ea5b2598
-md"""
-## Results
-"""
+# ╔═╡ 70e1f05b-c3a1-4e37-a70f-dcd0524698c4
+llgpfit.approx_lml
 
 # ╔═╡ 4bdb8f22-5b21-49d6-8b92-f0f995095169
-lgpfit.params
+llgpfit.params
 
 # ╔═╡ 0b999c07-42b2-4f5e-a2b1-60c810545956
-fpred = predict_latent(lgpfit, reshape(Xgrid, :, 1))
-
-# ╔═╡ 0834696b-f4d0-4f0f-9b66-748e08186779
-fpred_mean = reduce(vcat, mean.(fpred))
-
-# ╔═╡ 8fe758bd-7a43-485b-9bb8-6e38edff94e3
-fpred_std = sqrt.(reduce(vcat, var.(fpred)))
+logit_latent = reduce(vcat, mean.(predict_latent(llgpfit, reshape(Xgrid, :, 1))))
 
 # ╔═╡ fab12822-612b-4236-9921-03b129f27277
-ypred = mean.(predict(lgpfit, reshape(Xgrid, :, 1)))
+logit_pred = mean.(predict(llgpfit, reshape(Xgrid, :, 1)))
 
 # ╔═╡ 7b46a936-9350-4c92-b9a7-e2a7a0d33114
 begin
 	fig2, ax2, _ = scatter(x, y; label="Observations")
 	lines!(ax2, x, ps; label="True probabilities")
-	lines!(Xgrid, logistic.(fpred_mean); linestyle=:dash, label="Expit of latent mean")
-	lines!(ax2, Xgrid, ypred; linestyle=:dash, label="Posterior predictive")
+	lines!(ax2, Xgrid, logistic.(logit_latent); linestyle=:dash, label="Expit of latent mean")
+	lines!(ax2, Xgrid, logit_pred; linestyle=:dash, label="Posterior predictive")
 	axislegend(ax2)
 	fig2
+end
+
+# ╔═╡ 31044b73-0b89-4da6-b630-5f20633740b3
+md"""
+## Laplace GPR with Bernoulli-probit likelihood
+"""
+
+# ╔═╡ b81699ac-c7b5-4d65-82f4-dcafdbea3a23
+lpgpr = LaplaceGPRegressor(BernoulliProbitLikelihood())
+
+# ╔═╡ 16003b31-4a44-4b27-94f2-1850b69e4e4c
+lpgpfit = fit(lpgpr, reshape(x, :, 1), y; trace=true)
+
+# ╔═╡ 912fe451-2e7b-41ee-a5f1-0b69eba13b75
+lpgpfit.approx_lml
+
+# ╔═╡ 9f229b7b-bdad-4f46-a865-af7c60df77d6
+lpgpfit.params
+
+# ╔═╡ 4369fbcd-77b7-4bde-b0d0-8fe198c66096
+probit_latent = reduce(vcat, mean.(predict_latent(lpgpfit, reshape(Xgrid, :, 1))))
+
+# ╔═╡ ba227303-e6c3-475b-aded-61edfe9dd2f6
+probit_pred = mean.(predict(lpgpfit, reshape(Xgrid, :, 1)))
+
+# ╔═╡ e007fb25-7d73-4cd6-ae17-a6d6e57a7785
+begin
+	fig3, ax3, _ = scatter(x, y; label="Observations")
+	lines!(ax3, x, ps; label="True probabilities")
+	lines!(ax3, Xgrid, normcdf.(probit_latent); linestyle=:dash, label="Inv-probit of latent mean")
+	lines!(ax3, Xgrid, probit_pred; linestyle=:dash, label="Posterior predictive")
+	axislegend(ax3)
+	fig3
+end
+
+# ╔═╡ 0d70c7d4-e16c-45fe-a440-4fecf497e29b
+md"""
+## Comparison
+"""
+
+# ╔═╡ 8ba4e44f-f405-41e6-a4ad-3277f79ab0e5
+(logit=llgpfit.approx_lml, probit=lpgpfit.approx_lml)
+
+# ╔═╡ e8eaa0f0-d446-4791-8f2c-e5b6a3dc8a24
+begin
+	fig4, ax4, _ = scatter(x, y; label="Observations")
+	lines!(ax4, x, ps; label="True probabilities")
+	lines!(ax4, Xgrid, logit_pred; linestyle=:dash, label="Logit")
+	lines!(ax4, Xgrid, probit_pred; linestyle=:dash, label="Probit")
+	axislegend(ax4)
+	fig4
 end
 
 # ╔═╡ Cell order:
@@ -137,10 +180,19 @@ end
 # ╠═494c0caf-da3a-41c5-8b1c-7437fd5f4259
 # ╠═db4a19a8-3925-400b-abe8-8416fe797c51
 # ╠═5ab386e8-55f0-49ec-8cb4-75c9046a91f7
-# ╠═8a4533a2-57ef-4ce5-b9f9-10f2ea5b2598
+# ╠═70e1f05b-c3a1-4e37-a70f-dcd0524698c4
 # ╠═4bdb8f22-5b21-49d6-8b92-f0f995095169
 # ╠═0b999c07-42b2-4f5e-a2b1-60c810545956
-# ╠═0834696b-f4d0-4f0f-9b66-748e08186779
-# ╠═8fe758bd-7a43-485b-9bb8-6e38edff94e3
 # ╠═fab12822-612b-4236-9921-03b129f27277
 # ╠═7b46a936-9350-4c92-b9a7-e2a7a0d33114
+# ╠═31044b73-0b89-4da6-b630-5f20633740b3
+# ╠═b81699ac-c7b5-4d65-82f4-dcafdbea3a23
+# ╠═16003b31-4a44-4b27-94f2-1850b69e4e4c
+# ╠═912fe451-2e7b-41ee-a5f1-0b69eba13b75
+# ╠═9f229b7b-bdad-4f46-a865-af7c60df77d6
+# ╠═4369fbcd-77b7-4bde-b0d0-8fe198c66096
+# ╠═ba227303-e6c3-475b-aded-61edfe9dd2f6
+# ╠═e007fb25-7d73-4cd6-ae17-a6d6e57a7785
+# ╠═0d70c7d4-e16c-45fe-a440-4fecf497e29b
+# ╠═8ba4e44f-f405-41e6-a4ad-3277f79ab0e5
+# ╠═e8eaa0f0-d446-4791-8f2c-e5b6a3dc8a24
