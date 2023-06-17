@@ -129,6 +129,9 @@ ylrpred = predict(lrgpfit, xtest)
 # ╔═╡ b02ba126-3388-4c8a-be75-fe35650bbd99
 plot_pred(xtest, ylrpred)
 
+# ╔═╡ a264c6eb-f083-42eb-ac6d-b021ee66a310
+tgpr = LaplaceGPRegressor(TLikelihood(6))
+
 # ╔═╡ Cell order:
 # ╠═11220fee-00bb-11ee-228b-ada59a3eff31
 # ╠═d1c4d64c-7096-48b9-b2de-3493c5d37521
@@ -166,3 +169,13 @@ plot_pred(xtest, ylrpred)
 # ╠═da878c54-1461-44b6-8e17-105b7c3bee60
 # ╠═c2d7cc7a-81e1-48bb-9447-e96f275e485a
 # ╠═b02ba126-3388-4c8a-be75-fe35650bbd99
+# ╠═a264c6eb-f083-42eb-ac6d-b021ee66a310
+# ╠═eea64728-e0fe-4d13-84dc-400709e1921a
+# ╠═bf36395f-d4ea-457b-b6ea-c107adc419bc
+# ╠═f17946ff-cc5d-4375-ab31-098b7d57d236
+# ╠═05c91227-0451-481a-bda9-82f14e28780e
+# ╠═5cce0692-1da4-465e-96bf-ebf5b0afc88f
+# ╠═45bf5876-d624-4b32-acd8-952bf504c4f5
+# ╠═693b84a1-e74c-4d4b-a5c6-45bf2c80c8e5
+# ╠═66046424-35f9-466c-af79-b5da05964ce1
+# ╠═02cea147-524e-4766-b456-6b8eb4318abb
