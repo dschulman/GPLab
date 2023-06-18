@@ -132,6 +132,73 @@ plot_pred(xtest, ylrpred)
 # ╔═╡ a264c6eb-f083-42eb-ac6d-b021ee66a310
 tgpr = LaplaceGPRegressor(TLikelihood(6))
 
+# ╔═╡ c032975b-23bb-4d91-8d2d-cdbfce28495b
+tgpfit = fit(tgpr, x, y; trace=true)
+
+# ╔═╡ a74545d9-a5d7-4954-813e-0399e8ae878d
+tgpfit.params
+
+# ╔═╡ b8930770-f198-47d4-a2a4-6ca2c86a4b58
+ytpred = predict(tgpfit, xtest)
+
+# ╔═╡ ddc7783d-35ec-4b28-b772-caed62a4d076
+plot_pred(xtest, ytpred)
+
+# ╔═╡ 62be44b2-6288-4e4d-b0ce-7c30e7fd7ea8
+trgpr = LaplaceGPRegressor(Replicate(TLikelihood(6)))
+
+# ╔═╡ f9f770d2-90b0-4175-b19b-3556e621a3ac
+trgpfit = fit(trgpr, xr, yr; trace=true)
+
+# ╔═╡ 4fa25312-8aed-4e4f-8d05-0884a2a1c588
+trgpfit.params
+
+# ╔═╡ 24621da8-64d7-4e95-9c52-ca910c78cb2d
+ytrpred = predict(trgpfit, xtest)
+
+# ╔═╡ 7a2df798-603f-4768-aed9-7e564b85ca26
+plot_pred(xtest, ytrpred)
+
+# ╔═╡ 5df5f436-7933-4e55-a3d5-23f0e11dc554
+t3gpr = LaplaceGPRegressor(TLikelihood(3))
+
+# ╔═╡ 9ef15f6f-54e1-4f5c-a1d7-6823d61a1701
+t3gpfit = 
+	try
+		fit(t3gpr, x, y; trace=true)
+	catch
+		"Convergence failure"
+	end	
+
+# ╔═╡ 5407eebf-79ce-4af8-8eef-150f881e8563
+t3rgpr = LaplaceGPRegressor(Replicate(TLikelihood(3)))
+
+# ╔═╡ 6acb6fad-707f-4405-b93e-82c431ebf0e0
+t3rgpfit = fit(t3rgpr, xr, yr; trace=true)
+
+# ╔═╡ 1477b9c8-e093-4550-93cf-d208c495350d
+t3rgpfit.params
+
+# ╔═╡ 2889d426-8f36-4648-9a65-07963e16c07b
+yt3rpred = predict(t3rgpfit, xtest)
+
+# ╔═╡ d352a750-489d-41a3-a000-9f06af44f8ad
+plot_pred(xtest, yt3rpred)
+
+# ╔═╡ 4f7ea83f-61cf-466f-8814-c3d2d6fe475c
+with_theme(Theme(Lines=(
+	linewidth=2, 
+	cycle=Cycle([:color,:linestyle], covary=true)
+))) do
+	fig = Figure()
+	ax = Axis(fig[1,1]; xlabel="Time", ylabel="Accel")
+	lines!(ax, xtest[:,1], mean.(ylrpred); label="N")
+	lines!(ax, xtest[:,1], mean.(ytrpred); label="T6")
+	lines!(ax, xtest[:,1], mean.(yt3rpred); label="T3")
+	axislegend(ax)
+	fig
+end
+
 # ╔═╡ Cell order:
 # ╠═11220fee-00bb-11ee-228b-ada59a3eff31
 # ╠═d1c4d64c-7096-48b9-b2de-3493c5d37521
@@ -170,12 +237,20 @@ tgpr = LaplaceGPRegressor(TLikelihood(6))
 # ╠═c2d7cc7a-81e1-48bb-9447-e96f275e485a
 # ╠═b02ba126-3388-4c8a-be75-fe35650bbd99
 # ╠═a264c6eb-f083-42eb-ac6d-b021ee66a310
-# ╠═eea64728-e0fe-4d13-84dc-400709e1921a
-# ╠═bf36395f-d4ea-457b-b6ea-c107adc419bc
-# ╠═f17946ff-cc5d-4375-ab31-098b7d57d236
-# ╠═05c91227-0451-481a-bda9-82f14e28780e
-# ╠═5cce0692-1da4-465e-96bf-ebf5b0afc88f
-# ╠═45bf5876-d624-4b32-acd8-952bf504c4f5
-# ╠═693b84a1-e74c-4d4b-a5c6-45bf2c80c8e5
-# ╠═66046424-35f9-466c-af79-b5da05964ce1
-# ╠═02cea147-524e-4766-b456-6b8eb4318abb
+# ╠═c032975b-23bb-4d91-8d2d-cdbfce28495b
+# ╠═a74545d9-a5d7-4954-813e-0399e8ae878d
+# ╠═b8930770-f198-47d4-a2a4-6ca2c86a4b58
+# ╠═ddc7783d-35ec-4b28-b772-caed62a4d076
+# ╠═62be44b2-6288-4e4d-b0ce-7c30e7fd7ea8
+# ╠═f9f770d2-90b0-4175-b19b-3556e621a3ac
+# ╠═4fa25312-8aed-4e4f-8d05-0884a2a1c588
+# ╠═24621da8-64d7-4e95-9c52-ca910c78cb2d
+# ╠═7a2df798-603f-4768-aed9-7e564b85ca26
+# ╠═5df5f436-7933-4e55-a3d5-23f0e11dc554
+# ╠═9ef15f6f-54e1-4f5c-a1d7-6823d61a1701
+# ╠═5407eebf-79ce-4af8-8eef-150f881e8563
+# ╠═6acb6fad-707f-4405-b93e-82c431ebf0e0
+# ╠═1477b9c8-e093-4550-93cf-d208c495350d
+# ╠═2889d426-8f36-4648-9a65-07963e16c07b
+# ╠═d352a750-489d-41a3-a000-9f06af44f8ad
+# ╠═4f7ea83f-61cf-466f-8814-c3d2d6fe475c
