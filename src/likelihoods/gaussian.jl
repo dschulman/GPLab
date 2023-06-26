@@ -7,33 +7,31 @@ function init_latent(::GaussianLikelihood, y)
     return [m, log(v)]
 end
 
-function loglik(lik::GaussianLikelihood, θ, y)
-    mean, logvar = _params(lik, θ)
-    return -0.5 * sum(@. log2π + logvar + ((y-mean)^2 * exp(-logvar)))
+lognormalizer(::GaussianLikelihood) = - log2π / 2
+
+function loglik1(::GaussianLikelihood, (mean, logvar), y)
+    return -0.5 * (logvar + ((y-mean)^2 * exp(-logvar)))
 end
 
-function grad_loglik(lik::GaussianLikelihood, θ, y)
-    mean, logvar = _params(lik, θ)
-    z = y .- mean
-    prec = exp.(-logvar)
-    dmean = z .* prec
-    dlogvar = -0.5 .+ (0.5 .* z .* z .* prec)
-    return [dmean ; dlogvar]
+function grad_loglik1(::GaussianLikelihood, (mean, logvar), y)
+    z = y - mean
+    prec = exp(-logvar)
+    dmean = z * prec
+    dlogvar = -0.5 + (0.5 * z * z * prec)
+    return [dmean, dlogvar]
 end
 
-function hess_loglik(lik::GaussianLikelihood, θ, y)
-    mean, logvar = _params(lik, θ)
-    z = y .- mean
-    prec = exp.(-logvar)
-    ddm = Diagonal(-prec)
-    dm_dlv = Diagonal(-z .* prec)
-    ddlv = Diagonal(-0.5 .* z .* z .* prec)
+function hess_loglik1(::GaussianLikelihood, (mean, logvar), y)
+    z = y - mean
+    prec = exp(-logvar)
+    ddm = -prec
+    dm_dlv = -z * prec
+    ddlv = -0.5 * z * z * prec
     return [ddm dm_dlv ; dm_dlv ddlv]
 end
 
-function fisher_info(lik::GaussianLikelihood, θ, _)
-    _, logvar = _params(lik, θ)
-    return Diagonal([exp.(-logvar) ; fill(0.5, length(logvar))])
+function fisher_info1(::GaussianLikelihood, (_, logvar))
+    return Diagonal([exp(-logvar), 0.5])
 end
 
 function postpred(::GaussianLikelihood, θ)
@@ -43,12 +41,20 @@ function postpred(::GaussianLikelihood, θ)
     return Normal(emean, sqrt(yvar))
 end
 
+struct ReplicateGaussianStats{T,M}
+    u::T
+    v::T
+    m::M
+end
+
 function compute_stats(::Replicate{GaussianLikelihood}, y)
     m = length.(y)
     u = mean.(y)
     v = varm.(y, u; corrected=false)
-    return (u, v, m, M=Diagonal(repeat(m, 2)))
+    return StructArray{ReplicateGaussianStats}((u=u, v=v, m=m))
 end
+
+nobs(::Replicate{GaussianLikelihood}, y) = y.m
 
 function init_latent(::Replicate{GaussianLikelihood}, y)
     n = sum(y.m)
@@ -57,28 +63,25 @@ function init_latent(::Replicate{GaussianLikelihood}, y)
     return [u, log(v)]
 end
 
-function loglik(lik::Replicate{GaussianLikelihood}, θ, y)
-    mean, logvar = _params(lik, θ)
-    prec = exp.(-logvar)
-    z = y.u .- mean
-    return -0.5 * sum(@. y.m * (log2π + logvar + (prec * (z^2 + y.v))))
+function loglik1(::Replicate{GaussianLikelihood}, (mean, logvar), y)
+    prec = exp(-logvar)
+    z = y.u - mean
+    return -0.5 * y.m * (logvar + (prec * (z^2 + y.v)))
 end
 
-function grad_loglik(lik::Replicate{GaussianLikelihood}, θ, y)
-    mean, logvar = _params(lik, θ)
-    prec = exp.(-logvar)
-    z = y.u .- mean
-    dmean = @. y.m * prec * z
-    dlogvar = @. 0.5 * y.m * (-1 + (prec * (z^2 + y.v)))
-    return [dmean ; dlogvar]
+function grad_loglik1(::Replicate{GaussianLikelihood}, (mean, logvar), y)
+    prec = exp(-logvar)
+    z = y.u - mean
+    dmean = y.m * prec * z
+    dlogvar = 0.5 * y.m * (-1 + (prec * (z^2 + y.v)))
+    return [dmean, dlogvar]
 end
 
-function hess_loglik(lik::Replicate{GaussianLikelihood}, θ, y)
-    mean, logvar = _params(lik, θ)
-    prec = exp.(-logvar)
-    z = y.u .- mean
-    ddm = Diagonal(-y.m .* prec)
-    dm_dlv = Diagonal(-y.m .* z .* prec)
-    ddlv = Diagonal(@. -0.5 * y.m * prec * (z^2 + y.v))
+function hess_loglik1(::Replicate{GaussianLikelihood}, (mean, logvar), y)
+    prec = exp(-logvar)
+    z = y.u - mean
+    ddm = -y.m * prec
+    dm_dlv = -y.m * z * prec
+    ddlv = -0.5 * y.m * prec * (z^2 + y.v)
     return [ddm dm_dlv ; dm_dlv ddlv]
 end

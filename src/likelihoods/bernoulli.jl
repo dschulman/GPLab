@@ -4,22 +4,20 @@ nparam(::BernoulliLogitLikelihood) = 1
 
 init_latent(::BernoulliLogitLikelihood, y) = [logit(mean(y))]
 
-function loglik(::BernoulliLogitLikelihood, θ, y)
-    return sum(-log1pexp.((1 .- 2y) .* θ))
+lognormalizer(::BernoulliLogitLikelihood) = 1
+
+loglik1(::BernoulliLogitLikelihood, (θ,), y) = -log1pexp((1 - 2y) * θ)
+
+grad_loglik1(::BernoulliLogitLikelihood, (θ,), y) = y - logistic(θ)
+
+function hess_loglik1(::BernoulliLogitLikelihood, (θ,), _)
+    p = logistic(θ)
+    return - p * (1 - p)
 end
 
-function grad_loglik(::BernoulliLogitLikelihood, θ, y)
-    return y .- logistic.(θ)
-end
-
-function hess_loglik(::BernoulliLogitLikelihood, θ, _)
-    p = logistic.(θ)
-    return Diagonal(- p .* (1 .- p))
-end
-
-function fisher_info(::BernoulliLogitLikelihood, θ, _)
-    p = logistic.(θ)
-    return Diagonal(p .* (1 .- p))
+function fisher_info1(::BernoulliLogitLikelihood, (θ,))
+    p = logistic(θ)
+    return p * (1 - p)
 end
 
 function postpred(::BernoulliLogitLikelihood, θ)
@@ -57,24 +55,26 @@ nparam(::BernoulliProbitLikelihood) = 1
 
 init_latent(::BernoulliProbitLikelihood, y) = [norminvcdf(mean(y))]
 
-function loglik(::BernoulliProbitLikelihood, θ, y)
-    return sum(normlogcdf.((2y .- 1) .* θ))
+lognormalizer(::BernoulliProbitLikelihood) = 1
+
+loglik1(::BernoulliProbitLikelihood, (θ,), y) = normlogcdf((2y - 1) * θ)
+
+function grad_loglik1(::BernoulliProbitLikelihood, (θ,), y)
+    t = 2y - 1
+    tθ = t * θ
+    return t * normpdf(tθ) / normcdf(tθ)
 end
 
-function grad_loglik(::BernoulliProbitLikelihood, θ, y)
-    t = 2y .- 1
-    tθ = t .* θ
-    return t .* normpdf.(tθ) ./ normcdf.(tθ)
+function hess_loglik1(lik::BernoulliProbitLikelihood, (θ,), y)
+    t = 2y - 1
+    tθ = t * θ
+    g = t * normpdf(tθ) / normcdf(tθ)
+    return -g * (θ + g)
 end
 
-function hess_loglik(lik::BernoulliProbitLikelihood, θ, y)
-    g = grad_loglik(lik, θ, y)
-    return Diagonal(- g .* (θ .+ g))
-end
-
-function fisher_info(::BernoulliProbitLikelihood, θ, _)
-    p = normcdf.(θ)
-    return Diagonal(normpdf.(θ).^2 ./ p ./ (1 .- p))
+function fisher_info1(::BernoulliProbitLikelihood, (θ,))
+    p = normcdf(θ)
+    return normpdf(θ)^2 / p / (1 - p)
 end
 
 function postpred(::BernoulliProbitLikelihood, θ)

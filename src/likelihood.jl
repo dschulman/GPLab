@@ -1,13 +1,24 @@
 abstract type Likelihood end
 
-_params(lik::Likelihood, θ) = eachcol(reshape(θ, :, nparam(lik)))
+_params(lik::Likelihood, θ) = eachrow(reshape(θ, :, nparam(lik)))
+
+compute_stats(::Likelihood, y) = y
 
 function loglik(lik::Likelihood, θ, y)
-    return sum(loglik1.(Ref(lik), _params(lik, θ), y))
+    ln = sum(nobs(lik, y)) * lognormalizer(lik)
+    return ln + sum(loglik1.(Ref(lik), _params(lik, θ), y))
+end
+
+function _block_vec(a::AbstractVector{T}) where {T <: AbstractVector}
+    return vec(stack(a)')
+end
+
+function _block_vec(a::AbstractVector{T}) where {T <: Number}
+    return a
 end
 
 function grad_loglik(lik::Likelihood, θ, y)
-    return vec(stack(grad_loglik1.(Ref(lik), _params(lik, θ), y))')
+    return _block_vec(grad_loglik1.(Ref(lik), _params(lik, θ), y))
 end
 
 function _diag_blocks(a::AbstractVector{T}) where {T <: AbstractMatrix}
@@ -18,17 +29,21 @@ function _diag_blocks(a::AbstractVector{T}) where {T <: Diagonal}
     return Diagonal(vec(stack(diag.(a))'))
 end
 
+function _diag_blocks(a::AbstractVector{T}) where {T <: Number}
+    return Diagonal(a)
+end
+
 function hess_loglik(lik::Likelihood, θ, y)
     return _diag_blocks(hess_loglik1.(Ref(lik), _params(lik, θ), y))
 end
 
 function fisher_info(lik::Likelihood, θ, y)
-    return _diag_blocks(fisher_info1.(Ref(lik), _params(lik, θ) .* nobs(lik, y)))
+    return _diag_blocks(fisher_info1.(Ref(lik), _params(lik, θ)) .* nobs(lik, y))
 end
 
 abstract type SimpleLikelihood <: Likelihood end
 
-compute_stats(::SimpleLikelihood, y) = y
+nobs(::SimpleLikelihood, y) = ones(length(y))
 
 struct Replicate{Tb <: SimpleLikelihood} <: Likelihood
     base::Tb
@@ -36,22 +51,18 @@ end
 
 nparam(lik::Replicate) = nparam(lik.base)
 
-function compute_stats(lik::Replicate, y)
-    m = length.(y)
-    M = Diagonal(repeat(m, nparam(lik)))
-    u = ones.(m)
-    U = cat(repeat(u, nparam(lik))...; dims=(1,2))
-    return (y=reduce(vcat, y), U, M)
-end
+nobs(::Replicate, y) = length.(y)
 
-init_latent(lik::Replicate, y) = init_latent(lik.base, y.y)
+init_latent(lik::Replicate, y) = init_latent(lik.base, reduce(vcat, y))
 
-loglik(lik::Replicate, θ, y) = loglik(lik.base, y.U * θ, y.y)
+lognormalizer(lik::Replicate) = lognormalizer(lik.base)
 
-grad_loglik(lik::Replicate, θ, y) = y.U' * grad_loglik(lik.base, y.U * θ, y.y)
+loglik1(lik::Replicate, θ, y) = sum(loglik1.(Ref(lik.base), Ref(θ), y))
 
-hess_loglik(lik::Replicate, θ, y) = y.U' * hess_loglik(lik.base, y.U * θ, y.y) * y.U
+grad_loglik1(lik::Replicate, θ, y) = sum(grad_loglik1.(Ref(lik.base), Ref(θ), y))
 
-fisher_info(lik::Replicate, θ, y) = y.M * fisher_info(lik.base, θ, nothing)
+hess_loglik1(lik::Replicate, θ, y) = sum(hess_loglik1.(Ref(lik.base), Ref(θ), y))
+
+fisher_info1(lik::Replicate, θ) = fisher_info1(lik.base, θ)
 
 postpred(lik::Replicate, θ) = postpred(lik.base, θ)

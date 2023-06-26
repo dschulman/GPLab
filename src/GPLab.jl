@@ -10,6 +10,7 @@ using ParameterHandling
 using SpecialFunctions
 using Statistics
 using StatsFuns
+using StructArrays
 using Zygote
 
 export GPRegressor, RepGPRegressor, LaplaceGPRegressor, fit, predict_latent, predict,
