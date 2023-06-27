@@ -9,6 +9,7 @@ using Optim
 using ParameterHandling
 using SpecialFunctions
 using Statistics
+using StatsBase
 using StatsFuns
 using StructArrays
 using Zygote

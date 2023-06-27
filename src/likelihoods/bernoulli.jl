@@ -1,8 +1,8 @@
-struct BernoulliLogitLikelihood <: SimpleLikelihood end
+struct BernoulliLogitLikelihood <: Likelihood end
 
 nparam(::BernoulliLogitLikelihood) = 1
 
-init_latent(::BernoulliLogitLikelihood, y) = [logit(mean(y))]
+init_latent(::BernoulliLogitLikelihood, y, w) = [logit(mean(y, weights(w)))]
 
 lognormalizer(::BernoulliLogitLikelihood) = 1
 
@@ -49,11 +49,11 @@ function postpred(::BernoulliLogitLikelihood, θ)
     return Bernoulli(p)
 end
 
-struct BernoulliProbitLikelihood <: SimpleLikelihood end
+struct BernoulliProbitLikelihood <: Likelihood end
 
 nparam(::BernoulliProbitLikelihood) = 1
 
-init_latent(::BernoulliProbitLikelihood, y) = [norminvcdf(mean(y))]
+init_latent(::BernoulliProbitLikelihood, y, w) = [norminvcdf(mean(y, weights(w)))]
 
 lognormalizer(::BernoulliProbitLikelihood) = 1
 

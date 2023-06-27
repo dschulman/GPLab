@@ -1,11 +1,11 @@
-struct TLikelihood{Tdf <: Real} <: SimpleLikelihood
+struct TLikelihood{Tdf <: Real} <: Likelihood
     df::Tdf
 end
 
 nparam(::TLikelihood) = 2
 
-function init_latent(::TLikelihood, y)
-    m, v = mean_and_var(y; corrected=false)
+function init_latent(::TLikelihood, y, w)
+    m, v = mean_and_var(y, Weights(w); corrected=false)
     return [m, log(v)]
 end
 
