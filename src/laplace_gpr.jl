@@ -24,8 +24,8 @@ function init_params(gpr::LaplaceGPRegressor, x::AbstractMatrix)
 end
 
 function fit(
-    gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector; 
-    w=default_weight.(Ref(gpr.lik), yraw),
+    gpr::LaplaceGPRegressor, x::AbstractMatrix, yraw::AbstractVector;
+    w=default_weights(gpr.lik, yraw),
     trace=false
 )
     y = compute_stats(gpr.lik, yraw)

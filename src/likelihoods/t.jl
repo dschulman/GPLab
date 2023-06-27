@@ -5,7 +5,7 @@ end
 nparam(::TLikelihood) = 2
 
 function init_latent(::TLikelihood, y, w)
-    m, v = mean_and_var(y, Weights(w); corrected=false)
+    m, v = mean_and_var(y, w; corrected=false)
     return [m, log(v)]
 end
 

@@ -3,7 +3,7 @@ struct GaussianLikelihood <: Likelihood end
 nparam(lik::GaussianLikelihood) = 2
 
 function init_latent(::GaussianLikelihood, y, w)
-    m, v = mean_and_var(y, Weights(w); corrected=false)
+    m, v = mean_and_var(y, w; corrected=false)
     return [m, log(v)]
 end
 
@@ -53,9 +53,8 @@ function compute_stats(::Replicate{GaussianLikelihood}, y)
 end
 
 function init_latent(::Replicate{GaussianLikelihood}, y, w)
-    n = sum(w)
-    u = sum(y.u .* w) / n
-    v = sum(y.v .* w) / n
+    u = mean(y.u, w)
+    v = mean(y.v, w)
     return [u, log(v)]
 end
 

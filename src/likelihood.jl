@@ -4,11 +4,11 @@ _params(lik::Likelihood, θ) = eachrow(reshape(θ, :, nparam(lik)))
 
 compute_stats(::Likelihood, y) = y
 
-default_weight(::Likelihood, y) = 1
+default_weights(::Likelihood, y) = uweights(length(y))
 
 function loglik(lik::Likelihood, θ, y, w)
     ln = lognormalizer(lik)
-    return wsum(ln .+ loglik1.(Ref(lik), _params(lik, θ), y), w)
+    return sum(ln .+ loglik1.(Ref(lik), _params(lik, θ), y), w)
 end
 
 function _block_vec(a::AbstractVector{T}) where {T <: AbstractVector}
@@ -49,12 +49,12 @@ end
 
 nparam(lik::Replicate) = nparam(lik.base)
 
-default_weight(::Replicate, y) = length(y)
+default_weights(::Replicate, y) = fweights(length.(y))
 
 function init_latent(lik::Replicate, y, w)
     yy = reduce(vcat, y)
     m = length.(y)
-    ww = reduce(vcat, fill.(w ./ m, m))
+    ww = weights(reduce(vcat, fill.(w ./ m, m)))
     return init_latent(lik.base, yy, ww)
 end
 
