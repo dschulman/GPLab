@@ -81,7 +81,7 @@ function _predict(gpfit::RepGPRegression, xtest::AbstractMatrix, noise_var)
     Kstarstar = kernelmatrix_diag(gpfit.kernel, RowVecs(xtest))
     mean = gpfit.params.mean .+ (Kstar' * gpfit.α)
     var = Kstarstar .- AbstractGPs.diag_Xt_invA_X(gpfit.Cchol, Kstar) .+ noise_var
-    return Normal.(mean, sqrt.(var))
+    return mean, var
 end
 
 function predict_latent(gpfit::RepGPRegression, xtest::AbstractMatrix)

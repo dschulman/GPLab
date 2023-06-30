@@ -100,10 +100,10 @@ llgpfit.approx_lml
 llgpfit.params
 
 # ╔═╡ 0b999c07-42b2-4f5e-a2b1-60c810545956
-logit_latent = reduce(vcat, mean.(predict_latent(llgpfit, reshape(Xgrid, :, 1))))
+logit_latent = vec(predict_latent(llgpfit, reshape(Xgrid, :, 1))[1])
 
 # ╔═╡ fab12822-612b-4236-9921-03b129f27277
-logit_pred = mean.(predict(llgpfit, reshape(Xgrid, :, 1)))
+logit_pred = predict(llgpfit, reshape(Xgrid, :, 1))[1]
 
 # ╔═╡ 7b46a936-9350-4c92-b9a7-e2a7a0d33114
 begin
@@ -133,10 +133,10 @@ lpgpfit.approx_lml
 lpgpfit.params
 
 # ╔═╡ 4369fbcd-77b7-4bde-b0d0-8fe198c66096
-probit_latent = reduce(vcat, mean.(predict_latent(lpgpfit, reshape(Xgrid, :, 1))))
+probit_latent = vec(predict_latent(lpgpfit, reshape(Xgrid, :, 1))[1])
 
 # ╔═╡ ba227303-e6c3-475b-aded-61edfe9dd2f6
-probit_pred = mean.(predict(lpgpfit, reshape(Xgrid, :, 1)))
+probit_pred = predict(lpgpfit, reshape(Xgrid, :, 1))[1]
 
 # ╔═╡ e007fb25-7d73-4cd6-ae17-a6d6e57a7785
 begin

@@ -48,9 +48,9 @@ function fisher_info1(lik::TLikelihood, (_, logv))
     return Diagonal([im, ilv])
 end
 
-function postpred(lik::TLikelihood, θ)
-    em, elogv = mean(θ)
-    vm, vlogv = var(θ)
+function postpred(lik::TLikelihood, lmean, lvar)
+    em, elogv = lmean
+    vm, vlogv = diag(lvar)
     yvar = vm + (lik.df / (lik.df - 2) * exp(elogv + (vlogv / 2)))
-    return Normal(em, sqrt(yvar))
+    return em, yvar
 end

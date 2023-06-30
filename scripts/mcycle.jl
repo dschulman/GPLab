@@ -38,9 +38,8 @@ x = Matrix(dat[:, [:Times]])
 y = dat[:, :Accel]
 
 # ╔═╡ b7f51dda-6464-429b-8700-1c667baa897d
-function plot_pred(xtest, ypred)
-    ymean = mean.(ypred)
-    ystd = std.(ypred)
+function plot_pred(xtest, (ymean, yvar))
+	ystd = sqrt.(yvar)
     yupper = ymean .+ (2 .* ystd)
     ylower = ymean .- (2 .* ystd)
     fig = Figure()
@@ -192,9 +191,9 @@ with_theme(Theme(Lines=(
 ))) do
 	fig = Figure()
 	ax = Axis(fig[1,1]; xlabel="Time", ylabel="Accel")
-	lines!(ax, xtest[:,1], mean.(ylrpred); label="N")
-	lines!(ax, xtest[:,1], mean.(ytrpred); label="T6")
-	lines!(ax, xtest[:,1], mean.(yt3rpred); label="T3")
+	lines!(ax, xtest[:,1], ylrpred[1]; label="N")
+	lines!(ax, xtest[:,1], ytrpred[1]; label="T6")
+	lines!(ax, xtest[:,1], yt3rpred[1]; label="T3")
 	axislegend(ax)
 	fig
 end

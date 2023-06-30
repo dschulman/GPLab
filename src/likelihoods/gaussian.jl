@@ -34,11 +34,11 @@ function fisher_info1(::GaussianLikelihood, (_, logvar))
     return Diagonal([exp(-logvar), 0.5])
 end
 
-function postpred(::GaussianLikelihood, θ)
-    emean, elogvar = mean(θ)
-    vmean, vlogvar = var(θ)
+function postpred(::GaussianLikelihood, lmean, lvar)
+    emean, elogvar = lmean
+    vmean, vlogvar = diag(lvar)
     yvar = vmean + exp(elogvar + (vlogvar / 2))
-    return Normal(emean, sqrt(yvar))
+    return emean, yvar
 end
 
 struct ReplicateGaussianStats{T}

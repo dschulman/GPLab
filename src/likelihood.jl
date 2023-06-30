@@ -68,4 +68,4 @@ hess_loglik1(lik::Replicate, θ, y) = mean(hess_loglik1.(Ref(lik.base), Ref(θ),
 
 fisher_info1(lik::Replicate, θ) = fisher_info1(lik.base, θ)
 
-postpred(lik::Replicate, θ) = postpred(lik.base, θ)
+postpred(lik::Replicate, lmean, lvar) = postpred(lik.base, lmean, lvar)

@@ -149,17 +149,19 @@ function predict_latent(gpfit::LaplaceGPRegression, xtest::AbstractMatrix)
     μstar = vcat(fill.(gpfit.params.mean, N)...)
     mean = μstar + (Kstar' * gpfit.g)
     mean = reshape(mean, N, C)
-    means = eachrow(mean)
     Kstarstars = kernelmatrix_diag.(gpfit.kernels, Ref(RowVecs(xtest)))
     Kstarstar = Diagonal(vcat(Kstarstars...))
     cov = Kstarstar + (Kstar' * gpfit.HinvB * Kstar)
     cov = reshape(cov, N, C, N, C)
     # Note we force symmetry to deal with slight rounding errors
-    covs = [Symmetric(cov[i, :, i, :]) for i=1:N]
-    return MvNormal.(means, covs)
+    var = stack([Symmetric(cov[i, :, i, :]) for i=1:N]; dims=1)
+    return mean, var
 end
 
 function predict(gpfit::LaplaceGPRegression, xtest::AbstractMatrix)
-    latents = predict_latent(gpfit, xtest)
-    return postpred.(Ref(gpfit.lik), latents)
+    lm, lv = predict_latent(gpfit, xtest)
+    mvs = postpred.(Ref(gpfit.lik), eachslice(lm; dims=1), eachslice(lv; dims=1))
+    mean = stack([m for (m, _) in mvs]; dims=1)
+    var = stack([v for (_, v) in mvs]; dims=1)
+    return mean, var
 end

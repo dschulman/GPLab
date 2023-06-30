@@ -20,7 +20,7 @@ function fisher_info1(::BernoulliLogitLikelihood, (θ,))
     return p * (1 - p)
 end
 
-function postpred(::BernoulliLogitLikelihood, θ)
+function postpred(::BernoulliLogitLikelihood, lmean, lvar)
     # The logistic-normal integral is intractable:
     # ∫ logistic(x) * N(x | μ, σ2) dx
     #
@@ -42,11 +42,9 @@ function postpred(::BernoulliLogitLikelihood, θ)
     # A = normcdf.(x * λ')
     # c = A \ b
     c = [-1854.8214151380894, 3516.8989365473444, 221.29346712948822, 128.12323805570333, -2010.4942265944464]
-    f_mean = only(mean(θ))
-    f_var = only(var(θ))
-    z = f_mean .* λ ./ sqrt.(1 .+ (f_var .* λ.^2))
+    z = only(lmean) .* λ ./ sqrt.(1 .+ (only(lvar) .* λ.^2))
     p = c ⋅ normcdf.(z)
-    return Bernoulli(p)
+    return p, p*(1-p)
 end
 
 struct BernoulliProbitLikelihood <: Likelihood end
@@ -77,8 +75,7 @@ function fisher_info1(::BernoulliProbitLikelihood, (θ,))
     return normpdf(θ)^2 / p / (1 - p)
 end
 
-function postpred(::BernoulliProbitLikelihood, θ)
-    f_mean = mean(θ)[1]
-    f_var = var(θ)[1]
-    return normcdf(f_mean / sqrt(1 + f_var))
+function postpred(::BernoulliProbitLikelihood, lmean, lvar)
+    p = normcdf(only(lmean) / sqrt(1 + only(lvar)))
+    return p, p*(1-p)
 end
