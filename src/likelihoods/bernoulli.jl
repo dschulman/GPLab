@@ -44,7 +44,7 @@ function postpred(::BernoulliLogitLikelihood, lmean, lvar)
     c = [-1854.8214151380894, 3516.8989365473444, 221.29346712948822, 128.12323805570333, -2010.4942265944464]
     z = only(lmean) .* λ ./ sqrt.(1 .+ (only(lvar) .* λ.^2))
     p = c ⋅ normcdf.(z)
-    return p, p*(1-p)
+    return Bernoulli(p)
 end
 
 struct BernoulliProbitLikelihood <: Likelihood end
@@ -77,5 +77,5 @@ end
 
 function postpred(::BernoulliProbitLikelihood, lmean, lvar)
     p = normcdf(only(lmean) / sqrt(1 + only(lvar)))
-    return p, p*(1-p)
+    return Bernoulli(p)
 end

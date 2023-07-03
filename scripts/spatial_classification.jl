@@ -58,7 +58,7 @@ ytest = LinRange(-0.5, 1.5, 100)
 xytest = reduce(vcat, ([xt, yt]' for xt in xtest for yt in ytest))
 
 # ╔═╡ 1706150d-7797-4ae5-bc43-7a235b3676c9
-zpred = predict(gpfit, xytest)[1]
+zpred = mean.(predict(gpfit, xytest))
 
 # ╔═╡ 2b561b02-78fd-4476-b8bc-98b12333f5f0
 begin

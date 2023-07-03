@@ -50,5 +50,5 @@ function predict_latent(gpfit::GPRegression, xtest::AbstractMatrix)
 end
 
 function predict(gpfit::GPRegression, xtest::AbstractMatrix)
-    return mean_and_var(gpfit.posterior(RowVecs(xtest), gpfit.params.noise_var))
+    return marginals(gpfit.posterior(RowVecs(xtest), gpfit.params.noise_var))
 end

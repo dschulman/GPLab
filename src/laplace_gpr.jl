@@ -160,8 +160,5 @@ end
 
 function predict(gpfit::LaplaceGPRegression, xtest::AbstractMatrix)
     lm, lv = predict_latent(gpfit, xtest)
-    mvs = postpred.(Ref(gpfit.lik), eachslice(lm; dims=1), eachslice(lv; dims=1))
-    mean = stack([m for (m, _) in mvs]; dims=1)
-    var = stack([v for (_, v) in mvs]; dims=1)
-    return mean, var
+    return postpred.(Ref(gpfit.lik), eachslice(lm; dims=1), eachslice(lv; dims=1))
 end

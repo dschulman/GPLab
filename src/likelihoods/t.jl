@@ -52,5 +52,5 @@ function postpred(lik::TLikelihood, lmean, lvar)
     em, elogv = lmean
     vm, vlogv = diag(lvar)
     yvar = vm + (lik.df / (lik.df - 2) * exp(elogv + (vlogv / 2)))
-    return em, yvar
+    return Normal(em, sqrt(yvar))
 end

@@ -38,8 +38,9 @@ x = Matrix(dat[:, [:Times]])
 y = dat[:, :Accel]
 
 # ╔═╡ b7f51dda-6464-429b-8700-1c667baa897d
-function plot_pred(xtest, (ymean, yvar))
-	ystd = sqrt.(yvar)
+function plot_pred(xtest, ypred)
+	ymean = mean.(ypred)
+	ystd = std.(ypred)
     yupper = ymean .+ (2 .* ystd)
     ylower = ymean .- (2 .* ystd)
     fig = Figure()

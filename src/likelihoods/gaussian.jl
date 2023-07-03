@@ -38,7 +38,7 @@ function postpred(::GaussianLikelihood, lmean, lvar)
     emean, elogvar = lmean
     vmean, vlogvar = diag(lvar)
     yvar = vmean + exp(elogvar + (vlogvar / 2))
-    return emean, yvar
+    return Normal(emean, sqrt(yvar))
 end
 
 struct ReplicateGaussianStats{T}

@@ -89,5 +89,6 @@ function predict_latent(gpfit::RepGPRegression, xtest::AbstractMatrix)
 end
 
 function predict(gpfit::RepGPRegression, xtest::AbstractMatrix)
-    return _predict(gpfit, xtest, gpfit.params.noise_var)
+    m, v = _predict(gpfit, xtest, gpfit.params.noise_var)
+    return Normal.(m, sqrt.(v))
 end
