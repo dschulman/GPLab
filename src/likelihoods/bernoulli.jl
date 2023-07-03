@@ -4,7 +4,7 @@ nparam(::BernoulliLogitLikelihood) = 1
 
 init_latent(::BernoulliLogitLikelihood, y, w) = [logit(mean(y, w))]
 
-lognormalizer(::BernoulliLogitLikelihood) = 1
+lognormalizer(::BernoulliLogitLikelihood) = 0
 
 loglik1(::BernoulliLogitLikelihood, (θ,), y) = -log1pexp((1 - 2y) * θ)
 
@@ -53,7 +53,7 @@ nparam(::BernoulliProbitLikelihood) = 1
 
 init_latent(::BernoulliProbitLikelihood, y, w) = [norminvcdf(mean(y, w))]
 
-lognormalizer(::BernoulliProbitLikelihood) = 1
+lognormalizer(::BernoulliProbitLikelihood) = 0
 
 loglik1(::BernoulliProbitLikelihood, (θ,), y) = normlogcdf((2y - 1) * θ)
 
