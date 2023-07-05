@@ -6,7 +6,7 @@ init_latent(::BernoulliLogitLikelihood, y, w) = [logit(mean(y, w))]
 
 lognormalizer(::BernoulliLogitLikelihood) = 0
 
-loglik1(::BernoulliLogitLikelihood, (θ,), y) = -log1pexp((1 - 2y) * θ)
+loglik1(::BernoulliLogitLikelihood, (θ,), y) = y*θ - log1pexp(θ)
 
 grad_loglik1(::BernoulliLogitLikelihood, (θ,), y) = y - logistic(θ)
 
@@ -47,6 +47,16 @@ function postpred(::BernoulliLogitLikelihood, lmean, lvar)
     return Bernoulli(p)
 end
 
+compute_stats(::Replicate{BernoulliLogitLikelihood}, y) = mean.(y)
+
+init_latent(lik::Replicate{BernoulliLogitLikelihood}, y, w) = init_latent(lik.base, y, w)
+
+loglik1(lik::Replicate{BernoulliLogitLikelihood}, θ, y) = loglik1(lik.base, θ, y)
+
+grad_loglik1(lik::Replicate{BernoulliLogitLikelihood}, θ, y) = grad_loglik1(lik.base, θ, y)
+
+hess_loglik1(lik::Replicate{BernoulliLogitLikelihood}, θ, y) = hess_loglik1(lik.base, θ, y)
+
 struct BernoulliProbitLikelihood <: Likelihood end
 
 nparam(::BernoulliProbitLikelihood) = 1
@@ -63,7 +73,7 @@ function grad_loglik1(::BernoulliProbitLikelihood, (θ,), y)
     return t * normpdf(tθ) / normcdf(tθ)
 end
 
-function hess_loglik1(lik::BernoulliProbitLikelihood, (θ,), y)
+function hess_loglik1(::BernoulliProbitLikelihood, (θ,), y)
     t = 2y - 1
     tθ = t * θ
     g = t * normpdf(tθ) / normcdf(tθ)

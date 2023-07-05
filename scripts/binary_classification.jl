@@ -189,6 +189,78 @@ begin
 	fig5
 end
 
+# ╔═╡ db035577-ce18-4740-bbb8-93b3a414190b
+md"""
+## Replication
+"""
+
+# ╔═╡ 352125d0-422a-42f0-be1d-25dce4574515
+yr = let rng = Xoshiro(1234)
+	n = rand(rng, 1:10, length(y))
+	rand.(rng, Bernoulli.(ps), n)
+end
+
+# ╔═╡ ad264741-7538-411c-84b3-ec2f89f3231f
+xr = reduce(vcat, fill.(x, length.(yr)))
+
+# ╔═╡ ab1f0927-be14-4211-b41a-1f89592fe2e5
+rllgpr = LaplaceGPRegressor(Replicate(BernoulliLogitLikelihood()))
+
+# ╔═╡ 626b7aee-6a72-487e-ad50-4b5961e4e97a
+rllgpfit = fit(rllgpr, reshape(x, :, 1), yr; trace=true)
+
+# ╔═╡ 01f99931-0471-47c2-b8f8-408e5ed0dcd9
+rllgpfit.approx_lml
+
+# ╔═╡ ff7f8124-f604-4257-ba41-956f6aa8b8a7
+rllgpfit.params
+
+# ╔═╡ 0ff312c5-5ac6-4137-bcf9-a1ce60697568
+rlogit_latent = vec(predict_latent(rllgpfit, reshape(Xgrid, :, 1))[1])
+
+# ╔═╡ a9f416d3-802a-464c-b03b-297799a848c6
+rlogit_pred = mean.(predict(rllgpfit, reshape(Xgrid, :, 1)))
+
+# ╔═╡ 13b5511c-16cd-478c-8b44-02f00c0ae753
+let fig = Figure()
+	ax = Axis(fig[1,1])
+	scatter!(ax, xr, reduce(vcat, yr); label="Observations")
+	lines!(ax, Xgrid, pgrid; label="True probabilities")
+	lines!(ax, Xgrid, logistic.(rlogit_latent); linestyle=:dash, label="Expit of latent mean")
+	lines!(ax, Xgrid, rlogit_pred; linestyle=:dash, label="Posterior predictive")
+	axislegend(ax)
+	fig
+end
+
+# ╔═╡ f9bf13ba-8378-46b3-af0d-71608643a10e
+rlpgpr = LaplaceGPRegressor(Replicate(BernoulliProbitLikelihood()))
+
+# ╔═╡ 90cbd22d-b9cf-48ce-bd0e-403714b58536
+rlpgpfit = fit(rlpgpr, reshape(x, :, 1), yr; trace=true)
+
+# ╔═╡ afb24fb9-cf64-4351-9b52-e78a38286357
+rlpgpfit.approx_lml
+
+# ╔═╡ 21b503f4-e909-4ea2-99e4-4abce635a6be
+rlpgpfit.params
+
+# ╔═╡ 2f8663de-873e-4959-9ec8-6388b786b61f
+rprobit_latent = vec(predict_latent(rlpgpfit, reshape(Xgrid, :, 1))[1])
+
+# ╔═╡ 1b83ad0d-dd47-495e-b6b7-47074182ec93
+rprobit_pred = mean.(predict(rlpgpfit, reshape(Xgrid, :, 1)))
+
+# ╔═╡ 5e5c0382-0170-451e-b7cf-31b21b316739
+let fig = Figure()
+	ax = Axis(fig[1,1])
+	scatter!(ax, xr, reduce(vcat, yr); label="Observations")
+	lines!(ax, Xgrid, pgrid; label="True probabilities")
+	lines!(ax, Xgrid, logistic.(rprobit_latent); linestyle=:dash, label="Expit of latent mean")
+	lines!(ax, Xgrid, rprobit_pred; linestyle=:dash, label="Posterior predictive")
+	axislegend(ax)
+	fig
+end
+
 # ╔═╡ Cell order:
 # ╠═5eb9f144-0580-11ee-243f-fbc0e75aeabb
 # ╠═87bfe482-3dcc-4492-931c-0d69198b5018
@@ -237,3 +309,20 @@ end
 # ╠═f1ca7870-4946-49fb-8fa7-2219f5b9b8b3
 # ╠═3a2433e0-b505-436a-ab4c-d4f091f3a39a
 # ╠═a0159d7a-8dea-48da-97a5-0e133a650100
+# ╠═db035577-ce18-4740-bbb8-93b3a414190b
+# ╠═352125d0-422a-42f0-be1d-25dce4574515
+# ╠═ad264741-7538-411c-84b3-ec2f89f3231f
+# ╠═ab1f0927-be14-4211-b41a-1f89592fe2e5
+# ╠═626b7aee-6a72-487e-ad50-4b5961e4e97a
+# ╠═01f99931-0471-47c2-b8f8-408e5ed0dcd9
+# ╠═ff7f8124-f604-4257-ba41-956f6aa8b8a7
+# ╠═0ff312c5-5ac6-4137-bcf9-a1ce60697568
+# ╠═a9f416d3-802a-464c-b03b-297799a848c6
+# ╠═13b5511c-16cd-478c-8b44-02f00c0ae753
+# ╠═f9bf13ba-8378-46b3-af0d-71608643a10e
+# ╠═90cbd22d-b9cf-48ce-bd0e-403714b58536
+# ╠═afb24fb9-cf64-4351-9b52-e78a38286357
+# ╠═21b503f4-e909-4ea2-99e4-4abce635a6be
+# ╠═2f8663de-873e-4959-9ec8-6388b786b61f
+# ╠═1b83ad0d-dd47-495e-b6b7-47074182ec93
+# ╠═5e5c0382-0170-451e-b7cf-31b21b316739
