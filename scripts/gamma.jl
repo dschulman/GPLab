@@ -16,6 +16,9 @@ using Revise
 # ╔═╡ fbc731a4-5388-40c6-806c-1a168d9f2e9b
 using GPLab
 
+# ╔═╡ 3ee20f70-840e-4dae-ac0e-6ad18772c0f2
+using AbstractGPs
+
 # ╔═╡ e283f57d-d871-418b-8fce-99a34e8109ca
 using Distributions: Gamma
 
@@ -41,18 +44,18 @@ x = reshape(LinRange(-1, 1, 100), :, 1)
 m = exp.(sin.(vec(x) .* 2) .* 0.5)
 
 # ╔═╡ 34134384-fc5a-4032-aa07-a6f621233509
-k = exp.(cos.(vec(x) .* 2)) .* 2
+d = exp.(cos.(vec(x) .* 2)) .* 2
 
 # ╔═╡ 1ebcf454-06ec-41c3-8449-6f9f7c4b1711
 y = let rng = Xoshiro(12345)
-	rand.(rng, Gamma.(k, m ./ k))
+	rand.(rng, Gamma.(inv.(d), m .* d))
 end
 
 # ╔═╡ 4919a742-95e0-44ed-ae56-52d7a9b59e8c
 scatter(vec(x), y)
 
 # ╔═╡ 4c8227fd-89c0-4b36-a5b3-7cf7f6075eb7
-gpr = LaplaceGPRegressor(GammaLikelihood())
+gpr = LaplaceGPRegressor(GammaLikelihood(), SqExponentialKernel())
 
 # ╔═╡ 715ffffc-9bb9-4eda-872b-ee5ad31ac8f8
 gpfit = fit(gpr, x, y; trace=true)
@@ -75,10 +78,10 @@ end
 
 # ╔═╡ 9c00b0bd-b8f5-40dd-a386-b8aea457ac9d
 let fig = Figure()
-	ax = Axis(fig[1,1], title="Shape (k)")
-	lines!(ax, vec(x), k, label="True")
+	ax = Axis(fig[1,1], title="Dispersion (ϕ)")
+	lines!(ax, vec(x), d, label="True")
 	lines!(ax, vec(x), exp.(lmean[:,2]), linestyle=:dash, label="Latent")
-	lines!(ax, vec(x), shape.(ypred), linestyle=:dashdot, label="Postpred")
+	lines!(ax, vec(x), inv.(shape.(ypred)), linestyle=:dashdot, label="Postpred")
 	axislegend(ax)
 	fig
 end
@@ -88,6 +91,7 @@ end
 # ╠═0e615054-3b7c-467b-b68b-9b9ececf8e22
 # ╠═76db0933-bba0-4e07-9c02-82e20ad1ee5b
 # ╠═fbc731a4-5388-40c6-806c-1a168d9f2e9b
+# ╠═3ee20f70-840e-4dae-ac0e-6ad18772c0f2
 # ╠═d12b9986-5e79-4196-9b6d-478af40102ea
 # ╠═e283f57d-d871-418b-8fce-99a34e8109ca
 # ╠═f5fcfe82-afa1-4d0c-a669-08787b1019c8
