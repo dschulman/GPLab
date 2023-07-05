@@ -84,6 +84,50 @@ let fig = Figure()
 	lines!(ax, vec(x), inv.(shape.(ypred)), linestyle=:dashdot, label="Postpred")
 	axislegend(ax)
 	fig
+endy
+
+# ╔═╡ c8b4f82d-ef1f-4839-9e9c-95d51a3137c8
+yr = let rng = Xoshiro(1234)
+	n = rand(rng, 1:10, length(x))
+	rand.(rng, Gamma.(inv.(d), m .* d), n)
+end
+
+# ╔═╡ 07b86ae8-64f9-443f-9015-80341beb33ae
+xr = reduce(vcat, fill.(vec(x), length.(yr)))
+
+# ╔═╡ c7cf248e-77ef-41ba-ad4d-f12cea7490cf
+scatter(xr, reduce(vcat, yr))
+
+# ╔═╡ de86ecc1-eea5-4239-9f46-f43e7483c6b4
+rgpr = LaplaceGPRegressor(Replicate(GammaLikelihood()), SqExponentialKernel())
+
+# ╔═╡ 20c96db3-f8b1-4671-8085-a9d6e57fbec8
+rgpfit = fit(rgpr, x, yr; trace=true)
+
+# ╔═╡ c33f988e-1574-4d79-a4c0-bcbb84a38759
+rlmean, rlvar = predict_latent(rgpfit, x)
+
+# ╔═╡ 9d9b9cdf-f810-4d13-aa81-d72d0e5bfe40
+rypred = predict(rgpfit, x)
+
+# ╔═╡ 36656989-d818-4890-aed4-934794935a35
+let fig = Figure()
+	ax = Axis(fig[1,1], title="Mean (μ)")
+	lines!(ax, vec(x), m, label="True")
+	lines!(ax, vec(x), exp.(rlmean[:,1]), linestyle=:dash, label="Latent")
+	lines!(ax, vec(x), mean.(rypred), linestyle=:dashdot, label="Postpred")
+	axislegend(ax)
+	fig
+end
+
+# ╔═╡ dca6944a-4401-4984-b692-00c2a94e4791
+let fig = Figure()
+	ax = Axis(fig[1,1], title="Dispersion (ϕ)")
+	lines!(ax, vec(x), d, label="True")
+	lines!(ax, vec(x), exp.(rlmean[:,2]), linestyle=:dash, label="Latent")
+	lines!(ax, vec(x), inv.(shape.(rypred)), linestyle=:dashdot, label="Postpred")
+	axislegend(ax)
+	fig
 end
 
 # ╔═╡ Cell order:
@@ -109,3 +153,12 @@ end
 # ╠═3f0d0084-2884-4c62-8a25-9edc2e7ff444
 # ╠═2adf9ae3-e23a-4a84-a3d2-3b3257f4197a
 # ╠═9c00b0bd-b8f5-40dd-a386-b8aea457ac9d
+# ╠═c8b4f82d-ef1f-4839-9e9c-95d51a3137c8
+# ╠═07b86ae8-64f9-443f-9015-80341beb33ae
+# ╠═c7cf248e-77ef-41ba-ad4d-f12cea7490cf
+# ╠═de86ecc1-eea5-4239-9f46-f43e7483c6b4
+# ╠═20c96db3-f8b1-4671-8085-a9d6e57fbec8
+# ╠═c33f988e-1574-4d79-a4c0-bcbb84a38759
+# ╠═9d9b9cdf-f810-4d13-aa81-d72d0e5bfe40
+# ╠═36656989-d818-4890-aed4-934794935a35
+# ╠═dca6944a-4401-4984-b692-00c2a94e4791
